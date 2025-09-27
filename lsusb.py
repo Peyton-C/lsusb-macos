@@ -20,19 +20,26 @@ def tahoe_usb_fmt():
     data = json.loads(result.stdout)
 
     lines = []
-    for hub in data.get("SPUSBHostDataType", []):
-        for dev in hub.get("_items", []) or []:
+    def process_devices(items, depth=0):
+        for dev in items or []:
             l_id = clean_hex(dev.get("USBKeyLocationID")) or "-"
             vid = clean_hex(dev.get("USBDeviceKeyVendorID")) or "-"
             pid = clean_hex(dev.get("USBDeviceKeyProductID")) or "-"
             mfr = dev.get("USBDeviceKeyVendorName") or "-"
-            name = dev.get("_name") or "-"
+            name = dev.get("_name") or "-"    
 
             # Collapse whitespace in name/manufacturer so it's clean on one line
             mfr = " ".join(str(mfr).split())
             name = " ".join(str(name).split())
 
             lines.append(f"Location: {l_id}: ID {vid}:{pid} {mfr} {name}")
+
+            child_items = dev.get("_items")
+            if isinstance(child_items, list) and child_items:
+                process_devices(child_items, depth + 1)
+    
+    for top in data.get("SPUSBHostDataType", []):
+        process_devices(top.get("_items", []), depth=0)
 
     return lines
 
