@@ -1,0 +1,50 @@
+{
+  "SPUSBHostDataType" : [
+    {
+      "_items" : [
+        {
+          "_name" : "USB 3.2.1 FD",
+          "USBDeviceKeyLinkSpeed" : "480 Mb/s",
+          "USBDeviceKeyPowerAllocation" : "1.5 W (300 mA)",
+          "USBDeviceKeyProductID" : "0x1006",
+          "USBDeviceKeyProductVersion" : "0x0110",
+          "USBDeviceKeySerialNumber" : "0000000000000000",
+          "USBDeviceKeyVendorID" : "0x154b",
+          "USBDeviceKeyVendorName" : "PNY",
+          "USBKeyHardwareType" : "Removable",
+          "USBKeyLocationID" : "0x00100000"
+        }
+      ],
+      "_name" : "USB 3.1 Bus",
+      "Driver" : "AppleT8132USBXHCI",
+      "USBKeyHardwareType" : "Built-in",
+      "USBKeyLocationID" : "0x00000000"
+    },
+    {
+      "_items" : [
+        {
+          "_name" : "USB JTAG/serial debug unit",
+          "USBDeviceKeyLinkSpeed" : "12 Mb/s",
+          "USBDeviceKeyPowerAllocation" : "2.5 W (500 mA)",
+          "USBDeviceKeyProductID" : "0x1001",
+          "USBDeviceKeyProductVersion" : "0x0101",
+          "USBDeviceKeySerialNumber" : "00:00:00:00:00:00",
+          "USBDeviceKeyVendorID" : "0x303a",
+          "USBDeviceKeyVendorName" : "Espressif",
+          "USBKeyHardwareType" : "Removable",
+          "USBKeyLocationID" : "0x01100000"
+        }
+      ],
+      "_name" : "USB 3.1 Bus",
+      "Driver" : "AppleT8132USBXHCI",
+      "USBKeyHardwareType" : "Built-in",
+      "USBKeyLocationID" : "0x01000000"
+    },
+    {
+      "_name" : "USB 3.1 Bus",
+      "Driver" : "AppleT8132USBXHCI",
+      "USBKeyHardwareType" : "Built-in",
+      "USBKeyLocationID" : "0x02000000"
+    }
+  ]
+}
