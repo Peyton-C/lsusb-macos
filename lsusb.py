@@ -53,8 +53,8 @@ def tbolt_usb4_fmt():
     data = json.loads(result.stdout)
     lines = []
 
-    for hub in data.get("SPThunderboltDataType", []):
-        for dev in hub.get("_items", []) or []:
+    def process_devices(items, depth=0):
+        for dev in items or []:
             # Note: These arent a direct eqivilant to normal USB VID and PIDs
             vid = clean_hex(dev.get("vendor_id_key") or "-")
             pid = clean_hex(dev.get("device_id_key") or "-")
@@ -67,6 +67,14 @@ def tbolt_usb4_fmt():
 
             lines.append(f"ID: {vid}:{pid} {mfr} {name}")
 
+            # I dont have another TB / USB 4 device to test with but this should work? 
+            child_items = dev.get("_items")
+            if isinstance(child_items, list) and child_items:
+                process_devices(child_items, depth + 1)
+    
+    for top in data.get("SPThunderboltDataType", []):
+        process_devices(top.get("_items", []), depth=0)
+
     return lines
 
 
@@ -74,7 +82,7 @@ if platform.system() == "Darwin":
     if float(platform.mac_ver()[0]) >= 26.0:
         usb = tahoe_usb_fmt()
         tb = tbolt_usb4_fmt()
-
+        
         if usb != []:
             print("USB Devies:")
             for line in usb:
@@ -83,6 +91,9 @@ if platform.system() == "Darwin":
             print("\nThunderbolt / USB 4 Devices:")
             for line in tb:
                 print(line)
+
+        if usb == [] and tb == []:
+            print("No Devices Connected / Detected!")
     else:
         print("Unsupported Version")        
 else:
