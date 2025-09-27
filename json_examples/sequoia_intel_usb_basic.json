@@ -1,0 +1,75 @@
+{
+  "SPUSBDataType" : [
+    {
+      "_items" : [
+        {
+          "_name" : "USB 3.2.1 FD",
+          "bcd_device" : "1.10",
+          "bus_power" : "900",
+          "bus_power_used" : "504",
+          "device_speed" : "super_speed",
+          "extra_current_used" : "0",
+          "location_id" : "0x14500000 / 4",
+          "manufacturer" : "PNY",
+          "Media" : [
+            {
+              "_name" : "USB 3.2.1 FD",
+              "bsd_name" : "disk4",
+              "Logical Unit" : 0,
+              "partition_map_type" : "guid_partition_map_type",
+              "removable_media" : "yes",
+              "size" : "62.03 GB",
+              "size_in_bytes" : 62026416128,
+              "smart_status" : "Verified",
+              "USB Interface" : 0,
+              "volumes" : [
+                {
+                  "_name" : "EFI",
+                  "bsd_name" : "disk4s1",
+                  "file_system" : "MS-DOS FAT32",
+                  "free_space" : "61.95 GB",
+                  "free_space_in_bytes" : 61952655360,
+                  "iocontent" : "Microsoft Basic Data",
+                  "mount_point" : "/Volumes/EFI",
+                  "size" : "62.02 GB",
+                  "size_in_bytes" : 62024318976,
+                  "volume_uuid" : "9383F8EC-306F-3E68-B71C-59CACABBEE0D",
+                  "writable" : "yes"
+                }
+              ]
+            }
+          ],
+          "product_id" : "0x1006",
+          "serial_num" : "071C4270DA11F516",
+          "vendor_id" : "0x154b  (PNY Technologies Inc.)"
+        },
+        {
+          "_name" : "Bluetooth USB Host Controller",
+          "bcd_device" : "1.69",
+          "location_id" : "0x14300000",
+          "manufacturer" : "Broadcom Corp.",
+          "product_id" : "0x8290",
+          "vendor_id" : "apple_vendor_id"
+        },
+        {
+          "_name" : "MacBook Air SuperDrive",
+          "bcd_device" : "2.03",
+          "bus_power" : "500",
+          "bus_power_used" : "500",
+          "device_speed" : "high_speed",
+          "extra_current_used" : "600",
+          "location_id" : "0x14100000 / 5",
+          "manufacturer" : "Apple Inc.",
+          "product_id" : "0x1500",
+          "serial_num" : "000000000         ",
+          "vendor_id" : "apple_vendor_id"
+        }
+      ],
+      "_name" : "USB30Bus",
+      "host_controller" : "AppleUSBXHCIWPT",
+      "pci_device" : "0x9cb1 ",
+      "pci_revision" : "0x0003 ",
+      "pci_vendor" : "0x8086 "
+    }
+  ]
+}
