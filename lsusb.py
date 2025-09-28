@@ -10,7 +10,10 @@ filt_vid = None
 filt_pid = None
 
 if platform.system() == "Darwin":
-    macos_version = float(platform.mac_ver()[0])
+    mv_unclean = platform.mac_ver()[0]
+    mv_unclean = mv_unclean.split(".")
+    macos_version = float((f"{mv_unclean[0]}.{mv_unclean[1]}"))
+
 else:
     sys.exit("This script is only supported on macOS") 
 
