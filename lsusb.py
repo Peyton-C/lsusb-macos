@@ -155,7 +155,7 @@ def SPUSBDataType_legacy(): # Pre Catalina USB
             os.remove("/tmp/lsusb.plist")
         if os.path.exists("/tmp/lsusb.json"):
             os.remove("/tmp/lsusb.json")
-            
+
         result = subprocess.run(
             ["system_profiler", "SPUSBDataType", "-xml"],
             capture_output=True,
@@ -341,7 +341,8 @@ if VERBOSE == False:
         tb = SPThunderboltDataType()
     else:
         usb = SPUSBDataType_legacy() # Mojave and older
-        tb = SPThunderboltDataType_legacy()
+        tb = []
+        #tb = SPThunderboltDataType_legacy()
 
     if usb != []:
         print("USB Devies:")
