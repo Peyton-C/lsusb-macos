@@ -1,5 +1,5 @@
 # lsusb-macos
-A simple python script that outputs connected USB and Thunderbolt devices in a format similar to lsusb using `system_profiler`.
+A simple python script that outputs connected USB and Thunderbolt devices in a format similar to lsusb using `system_profiler` on macOS 10.15 and newer.
 
 ## Sample Output
 ```
