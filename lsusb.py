@@ -150,7 +150,7 @@ def SPUSBDataType_legacy(): # Pre Catalina USB
         #data = json.load(f)
         plist_to_json(DEBUG_FILE)
     else:
-        result = subprocess.run(
+        subprocess.run(
             ["system_profiler", "SPUSBDataType", "-xml", ">", "/tmp/lsusb.plist"],
             capture_output=True,
             text=True,
