@@ -13,7 +13,8 @@ if platform.system() == "Darwin":
     mv_unclean = platform.mac_ver()[0]
     mv_unclean = mv_unclean.split(".")
     macos_version = float((f"{mv_unclean[0]}.{mv_unclean[1]}"))
-
+    if macos_version < 10.14:
+        sys.exit("This script cannot be ran on your version of Mac OS X")
 else:
     sys.exit("This script is only supported on macOS") 
 
