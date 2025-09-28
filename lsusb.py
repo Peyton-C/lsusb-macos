@@ -88,24 +88,50 @@ def SPUSBHostDataType(): # Tahoe and Newer USB
             if isinstance(child_items, list) and child_items:
                 process_devices(child_items, depth + 1)
 
-    hubs = data[0].get("_items", []) or []
-    for top in hubs:
+    for top in data.get("SPUSBHostDataType", []):
         process_devices(top.get("_items", []), depth=0)
 
     return lines
 
-def SPUSBDataType(): # Catalina - Sequoia USB
-    if DEBUG == True and DEBUG_TYPE == "USB":
-        f = open(DEBUG_FILE)
-        data = json.load(f)
+def SPUSBDataType(FORMAT): # Yosemite - Sequoia USB
+    # Catalina - Sequoia
+    if FORMAT == "JSON":
+        if DEBUG == True and DEBUG_TYPE == "USB":
+            f = open(DEBUG_FILE)
+            data = json.load(f)
+        else:
+            result = subprocess.run(
+                ["system_profiler", "SPUSBDataType", "-json"],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            data = json.loads(result.stdout)
+    # Yosemite - Mojave
     else:
-        result = subprocess.run(
-            ["system_profiler", "SPUSBDataType", "-json"],
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-        data = json.loads(result.stdout)
+        if DEBUG == True and DEBUG_TYPE == "USB":
+            #data = json.load(f)
+            plist_to_json(DEBUG_FILE)
+        else:
+            if os.path.exists("/tmp/lsusb.plist"):
+                os.remove("/tmp/lsusb.plist")
+            if os.path.exists("/tmp/lsusb.json"):
+                os.remove("/tmp/lsusb.json")
+
+            result = subprocess.run(
+                ["system_profiler", "SPUSBDataType", "-xml"],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+
+            with open("/tmp/lsusb.plist", "w", encoding="utf-8") as f:
+                f.write(result.stdout)
+
+            plist_to_json("/tmp/lsusb.plist")
+
+        f = open("/tmp/lsusb.json")
+        data = json.load(f)
 
     lines = []
     def process_devices(items, depth=0):
@@ -114,18 +140,21 @@ def SPUSBDataType(): # Catalina - Sequoia USB
             pid = clean_hex(dev.get("product_id")) or "-"
             name = dev.get("_name") or "-"    
 
-            # VID includes both the manufacturer and the VID for some reason
-            vid = dev.get("vendor_id") or "-"
+            if FORMAT == "JSON":
+                # VID includes both the manufacturer and the VID for some reason
+                vid = dev.get("vendor_id") or "-"
 
-            # Apple is actually fucking insane, instead of you know, putting down their actual USB VID they just supply "apple_vendor_id"
-            if vid != "apple_vendor_id":
-                vid, mfr = vid.split("  ") # "vendor_id" : "0x154b  (PNY Technologies Inc.)"
-                vid = clean_hex(vid)
-                mfr = mfr.strip("()")
-
+                # Apple is actually fucking insane, instead of you know, putting down their actual USB VID they just supply "apple_vendor_id"
+                if vid != "apple_vendor_id":
+                    vid, mfr = vid.split("  ") # "vendor_id" : "0x154b  (PNY Technologies Inc.)"
+                    vid = clean_hex(vid)
+                    mfr = mfr.strip("()")
+                else:
+                    vid = "05ac" # Pretty sure this is apple's VID
+                    # Apple doesnt add on the company name to the VID so we get it from the feild thats usally less detailed, execpt for themselves
+                    mfr = dev.get("manufacturer") or "-"
             else:
-                vid = "05ac" # Pretty sure this is apple's VID
-                # Apple doesnt add on the company name to the VID so we get it from the feild thats usally less detailed, execpt for themselves
+                vid = clean_hex(dev.get("vendor_id")) or "-"
                 mfr = dev.get("manufacturer") or "-"
 
             # The / # at the end of location IDs looks kinda ugly and is only sometimes there so im removing it
@@ -140,67 +169,12 @@ def SPUSBDataType(): # Catalina - Sequoia USB
             child_items = dev.get("_items")
             if isinstance(child_items, list) and child_items:
                 process_devices(child_items, depth + 1)
-    
-    # for top in data.get("SPUSBDataType", []):
-    #     process_devices(top.get("_items", []), depth=0)
 
-    hubs = data[0].get("_items", []) or []
-    for top in hubs:
-        process_devices(top.get("_items", []), depth=0)
-
-    return lines
-
-def SPUSBDataType_legacy(): # Pre Catalina USB
-    if DEBUG == True and DEBUG_TYPE == "USB":
-        #data = json.load(f)
-        plist_to_json(DEBUG_FILE)
+    if FORMAT == "JSON":
+        hubs = data.get("SPUSBDataType", [])
     else:
-        if os.path.exists("/tmp/lsusb.plist"):
-            os.remove("/tmp/lsusb.plist")
-        if os.path.exists("/tmp/lsusb.json"):
-            os.remove("/tmp/lsusb.json")
+        hubs = data[0].get("_items", []) or []
 
-        result = subprocess.run(
-            ["system_profiler", "SPUSBDataType", "-xml"],
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-
-        with open("/tmp/lsusb.plist", "w", encoding="utf-8") as f:
-            f.write(result.stdout)
-
-        plist_to_json("/tmp/lsusb.plist")
-
-    f = open("/tmp/lsusb.json")
-    data = json.load(f)
-
-    lines = []
-    def process_devices(items, depth=0):
-        for dev in items or []:
-            l_id = clean_hex(dev.get("location_id")) or "-"
-            vid = clean_hex(dev.get("vendor_id")) or "-"
-            pid = clean_hex(dev.get("product_id")) or "-"
-            name = dev.get("_name") or "-"
-            mfr = dev.get("manufacturer") or "-"
-
-            # The / # at the end of location IDs looks kinda ugly and is only sometimes there so im removing it
-            l_id = l_id.split(" / ")[0]
-
-            # Collapse whitespace in name/manufacturer so it's clean on one line
-            mfr = " ".join(str(mfr).split())
-            name = " ".join(str(name).split())
-
-            lines.append(f"Location: {l_id}: ID {vid}:{pid} {mfr} {name}")
-
-            child_items = dev.get("_items")
-            if isinstance(child_items, list) and child_items:
-                process_devices(child_items, depth + 1)
-    
-    # for top in data.get("SPUSBDataType", []):
-    #     process_devices(top.get("_items", []), depth=0)
-
-    hubs = data[0].get("_items", []) or []
     for top in hubs:
         process_devices(top.get("_items", []), depth=0)
 
@@ -341,10 +315,10 @@ if VERBOSE == False:
         usb = SPUSBHostDataType() # Tahoe and Newer
         tb = SPThunderboltDataType()
     elif macos_version >= 10.15 and macos_version < 26.0:
-        usb = SPUSBDataType() # Catalina - Sequoia
+        usb = SPUSBDataType("JSON") # Catalina - Sequoia
         tb = SPThunderboltDataType()
-    else:
-        usb = SPUSBDataType_legacy() # Mojave and older
+    elif macos_version >= 10.10 and macos_version < 10.15:
+        usb = SPUSBDataType("XML") # Yosemite - Mojave
         tb = []
         #tb = SPThunderboltDataType_legacy()
 
