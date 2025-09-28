@@ -109,14 +109,14 @@ def SPUSBDataType(FORMAT): # Yosemite - Sequoia USB
             data = json.loads(result.stdout)
     # Yosemite - Mojave
     else:
+        if os.path.exists("/tmp/lsusb.plist"):
+            os.remove("/tmp/lsusb.plist")
+        if os.path.exists("/tmp/lsusb.json"):
+            os.remove("/tmp/lsusb.json")
+            
         if DEBUG == True and DEBUG_TYPE == "USB":
             plist_to_json(DEBUG_FILE)
         else:
-            if os.path.exists("/tmp/lsusb.plist"):
-                os.remove("/tmp/lsusb.plist")
-            if os.path.exists("/tmp/lsusb.json"):
-                os.remove("/tmp/lsusb.json")
-
             result = subprocess.run(
                 ["system_profiler", "SPUSBDataType", "-xml"],
                 capture_output=True,
@@ -180,7 +180,56 @@ def SPUSBDataType(FORMAT): # Yosemite - Sequoia USB
     return lines
 
 def SPUSBDataType_legacy(): # Snow Leopard - Mavericks
-    ...
+    if os.path.exists("/tmp/lsusb.plist"):
+        os.remove("/tmp/lsusb.plist")
+    if os.path.exists("/tmp/lsusb.json"):
+        os.remove("/tmp/lsusb.json")
+
+    if DEBUG == True and DEBUG_TYPE == "USB":
+        plist_to_json(DEBUG_FILE)
+    else:
+        result = subprocess.run(
+            ["system_profiler", "SPUSBDataType", "-xml"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+
+        with open("/tmp/lsusb.plist", "w", encoding="utf-8") as f:
+            f.write(result.stdout)
+
+        plist_to_json("/tmp/lsusb.plist")
+
+    f = open("/tmp/lsusb.json")
+    data = json.load(f)
+
+    lines = []
+    def process_devices(items, depth=0):
+        for dev in items or []:
+            name = dev.get("_name") or "-"    
+            pid = clean_hex(dev.get("a_product_id")) or "-"
+            vid = clean_hex(dev.get("b_vendor_id")) or "-"
+            mfr = dev.get("f_manufacturer") or "-"
+            l_id = clean_hex(dev.get("g_location_id")) or "-"
+
+            # The / # at the end of location IDs looks kinda ugly and is only sometimes there so im removing it
+            l_id = l_id.split(" / ")[0]
+
+            # Collapse whitespace in name/manufacturer so it's clean on one line
+            mfr = " ".join(str(mfr).split())
+            name = " ".join(str(name).split())
+
+            lines.append(f"Location: {l_id}: ID {vid}:{pid} {mfr} {name}")
+
+            child_items = dev.get("_items")
+            if isinstance(child_items, list) and child_items:
+                process_devices(child_items, depth + 1)
+
+    hubs = data[0].get("_items", []) or []
+    for top in hubs:
+        process_devices(top.get("_items", []), depth=0)
+
+    return lines
 
 def SPThunderboltDataType(FORMAT): # Yosemite and newer
     if FORMAT == "JSON":
@@ -293,7 +342,10 @@ if VERBOSE == False:
     elif macos_version >= 10.10 and macos_version < 10.15:
         usb = SPUSBDataType("XML") # Yosemite - Mojave
         tb = []
-        #tb = SPThunderboltDataType_legacy()
+        #tb = SPThunderboltDataType("XML")
+    else:
+        usb = SPUSBDataType_legacy()
+        tb = []
 
     if usb != []:
         print("USB Devies:")
