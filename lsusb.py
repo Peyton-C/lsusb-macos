@@ -4,6 +4,7 @@ import platform
 import sys
 import plistlib
 from pathlib import Path
+import os
 
 VERBOSE = False
 DEBUG = False
@@ -150,6 +151,11 @@ def SPUSBDataType_legacy(): # Pre Catalina USB
         #data = json.load(f)
         plist_to_json(DEBUG_FILE)
     else:
+        if os.path.exists("/tmp/lsusb.plist"):
+            os.remove("/tmp/lsusb.plist")
+        if os.path.exists("/tmp/lsusb.json"):
+            os.remove("/tmp/lsusb.json")
+            
         result = subprocess.run(
             ["system_profiler", "SPUSBDataType", "-xml"],
             capture_output=True,
@@ -245,6 +251,11 @@ def SPThunderboltDataType_legacy(): # Mojave and older
         #data = json.load(f)
         plist_to_json(DEBUG_FILE)
     else:
+        if os.path.exists("/tmp/lsusb.plist"):
+            os.remove("/tmp/lsusb.plist")
+        if os.path.exists("/tmp/lsusb.json"):
+            os.remove("/tmp/lsusb.json")
+
         result = subprocess.run(
             ["system_profiler", "SPThunderboltDataType", "-xml"],
             capture_output=True,
