@@ -179,6 +179,9 @@ def SPUSBDataType(FORMAT): # Yosemite - Sequoia USB
 
     return lines
 
+def SPUSBDataType_legacy(): # Snow Leopard - Mavericks
+    ...
+
 def SPThunderboltDataType(FORMAT): # Yosemite and newer
     if FORMAT == "JSON":
         if DEBUG == True and DEBUG_TYPE == "TB":

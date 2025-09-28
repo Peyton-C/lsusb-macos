@@ -24,3 +24,23 @@ Location: 01220000: ID 0bda:8157 Realtek USB 10/100/1G/2.5G/5G LAN
 Thunderbolt / USB 4 Devices:
 ID: 2b89:0708 Ugreen Group Limited Thunderbolt 4 Docking Station (8-in-1)
 ```
+
+## Compatibility
+| macOS Version | Python Version | USB | TB |
+| ------------- | -------------- | --- | -- |
+| 10.6          | 3.7            |  ?  | X  |
+| 10.7          | 3.7            |  Y  | X  |
+| 10.8          | 3.7            |  Y  | X  |
+| 10.9          | 3.11           |  ?  | X  |
+| 10.10         | 3.11           |  Y  | X  |
+| 10.11         | 3.11           |  Y  | X  |
+| 10.12         | 3.11           |  Y  | X  |
+| 10.13         | 3.13           |  Y  | X  |
+| 10.14         | 3.13           |  Y  | X  |
+| 10.15         | 3.13           |  Y  | Y  |
+| 11            | 3.13           |  Y  | Y  |
+| 12            | 3.13           |  Y  | Y  |
+| 13            | 3.13           |  Y  | Y  |
+| 14            | 3.13           |  Y  | Y  |
+| 15            | 3.13           |  Y  | Y  |
+| 26            | 3.13           |  Y  | Y  |
