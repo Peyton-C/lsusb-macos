@@ -1,0 +1,386 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<array>
+	<dict>
+		<key>_SPCommandLineArguments</key>
+		<array>
+			<string>/usr/sbin/system_profiler</string>
+			<string>SPUSBDataType</string>
+			<string>-xml</string>
+		</array>
+		<key>_SPCompletionInterval</key>
+		<real>0.18465805053710938</real>
+		<key>_dataType</key>
+		<string>SPUSBDataType</string>
+		<key>_detailLevel</key>
+		<integer>-1</integer>
+		<key>_items</key>
+		<array>
+			<dict>
+				<key>_items</key>
+				<array>
+					<dict>
+						<key>_name</key>
+						<string>QEMU USB HARDDRIVE</string>
+						<key>a_product_id</key>
+						<string>0x0001</string>
+						<key>b_vendor_id</key>
+						<string>0x46f4</string>
+						<key>bsd_name</key>
+						<string>disk2</string>
+						<key>c_bcd_device</key>
+						<string> 0.00</string>
+						<key>d_serial_num</key>
+						<string>1-0000:00:04.0-4</string>
+						<key>detachable_drive</key>
+						<string>yes</string>
+						<key>e_device_speed</key>
+						<string>high_speed</string>
+						<key>f_manufacturer</key>
+						<string>QEMU</string>
+						<key>g_location_id</key>
+						<string>0x04400000 / 2</string>
+						<key>h_bus_power</key>
+						<string>500</string>
+						<key>j_bus_power_used</key>
+						<string>0</string>
+						<key>partition_map_type</key>
+						<string>guid_partition_map_type</string>
+						<key>removable_media</key>
+						<string>yes</string>
+						<key>size</key>
+						<string>200 MB</string>
+						<key>size_in_bytes</key>
+						<integer>200020480</integer>
+						<key>smart_status</key>
+						<string>Not Supported</string>
+						<key>volumes</key>
+						<array>
+							<dict>
+								<key>_name</key>
+								<string>EFI-LEGACY</string>
+								<key>bsd_name</key>
+								<string>disk2s1</string>
+								<key>file_system</key>
+								<string>MS-DOS FAT16</string>
+								<key>free_space</key>
+								<string>181.2 MB</string>
+								<key>free_space_in_bytes</key>
+								<integer>181223424</integer>
+								<key>iocontent</key>
+								<string>Microsoft Basic Data</string>
+								<key>mount_point</key>
+								<string>/Volumes/EFI-LEGACY</string>
+								<key>size</key>
+								<string>198.2 MB</string>
+								<key>size_in_bytes</key>
+								<integer>198180864</integer>
+								<key>writable</key>
+								<string>yes</string>
+							</dict>
+						</array>
+					</dict>
+				</array>
+				<key>_name</key>
+				<string>EHCI Root Hub Simulation</string>
+				<key>controller_location</key>
+				<string>PCI</string>
+				<key>host_controller</key>
+				<string>AppleUSBEHCI</string>
+				<key>pci_device</key>
+				<string>0x293a </string>
+				<key>pci_revision</key>
+				<string>0x0003 </string>
+				<key>pci_vendor</key>
+				<string>0x8086 </string>
+				<key>usb_bus_number</key>
+				<string>0x04 </string>
+			</dict>
+			<dict>
+				<key>_items</key>
+				<array>
+					<dict>
+						<key>_name</key>
+						<string>QEMU USB Tablet</string>
+						<key>a_product_id</key>
+						<string>0x0001</string>
+						<key>b_vendor_id</key>
+						<string>0x0627</string>
+						<key>c_bcd_device</key>
+						<string> 0.00</string>
+						<key>d_serial_num</key>
+						<string>28754-0000:00:1d.7-2</string>
+						<key>e_device_speed</key>
+						<string>high_speed</string>
+						<key>f_manufacturer</key>
+						<string>QEMU</string>
+						<key>g_location_id</key>
+						<string>0xfd200000 / 3</string>
+						<key>h_bus_power</key>
+						<string>500</string>
+						<key>j_bus_power_used</key>
+						<string>100</string>
+					</dict>
+					<dict>
+						<key>_name</key>
+						<string>QEMU USB Keyboard</string>
+						<key>a_product_id</key>
+						<string>0x0001</string>
+						<key>b_vendor_id</key>
+						<string>0x0627</string>
+						<key>c_bcd_device</key>
+						<string> 0.00</string>
+						<key>d_serial_num</key>
+						<string>68284-0000:00:1d.7-1</string>
+						<key>e_device_speed</key>
+						<string>high_speed</string>
+						<key>f_manufacturer</key>
+						<string>QEMU</string>
+						<key>g_location_id</key>
+						<string>0xfd100000 / 2</string>
+						<key>h_bus_power</key>
+						<string>500</string>
+						<key>j_bus_power_used</key>
+						<string>100</string>
+					</dict>
+				</array>
+				<key>_name</key>
+				<string>EHCI Root Hub Simulation</string>
+				<key>controller_location</key>
+				<string>PCI</string>
+				<key>host_controller</key>
+				<string>AppleUSBEHCI</string>
+				<key>pci_device</key>
+				<string>0x293a </string>
+				<key>pci_revision</key>
+				<string>0x0003 </string>
+				<key>pci_vendor</key>
+				<string>0x8086 </string>
+				<key>usb_bus_number</key>
+				<string>0xfd </string>
+			</dict>
+			<dict>
+				<key>_name</key>
+				<string>UHCI Root Hub Simulation</string>
+				<key>controller_location</key>
+				<string>PCI</string>
+				<key>host_controller</key>
+				<string>AppleUSBUHCI</string>
+				<key>pci_device</key>
+				<string>0x7fff00002934 </string>
+				<key>pci_revision</key>
+				<string>0x7fff00000003 </string>
+				<key>pci_vendor</key>
+				<string>0x7fff00008086 </string>
+				<key>usb_bus_number</key>
+				<string>0x1d </string>
+			</dict>
+			<dict>
+				<key>_name</key>
+				<string>UHCI Root Hub Simulation</string>
+				<key>controller_location</key>
+				<string>PCI</string>
+				<key>host_controller</key>
+				<string>AppleUSBUHCI</string>
+				<key>pci_device</key>
+				<string>0x7fff00002936 </string>
+				<key>pci_revision</key>
+				<string>0x7fff00000003 </string>
+				<key>pci_vendor</key>
+				<string>0x7fff00008086 </string>
+				<key>usb_bus_number</key>
+				<string>0x5d </string>
+			</dict>
+			<dict>
+				<key>_name</key>
+				<string>UHCI Root Hub Simulation</string>
+				<key>controller_location</key>
+				<string>PCI</string>
+				<key>host_controller</key>
+				<string>AppleUSBUHCI</string>
+				<key>pci_device</key>
+				<string>0x7fff00002935 </string>
+				<key>pci_revision</key>
+				<string>0x7fff00000003 </string>
+				<key>pci_vendor</key>
+				<string>0x7fff00008086 </string>
+				<key>usb_bus_number</key>
+				<string>0x3d </string>
+			</dict>
+			<dict>
+				<key>_name</key>
+				<string>UHCI Root Hub Simulation</string>
+				<key>controller_location</key>
+				<string>PCI</string>
+				<key>host_controller</key>
+				<string>AppleUSBUHCI</string>
+				<key>pci_device</key>
+				<string>0x7fff00002934 </string>
+				<key>pci_revision</key>
+				<string>0x7fff00000003 </string>
+				<key>pci_vendor</key>
+				<string>0x7fff00008086 </string>
+				<key>usb_bus_number</key>
+				<string>0x05 </string>
+			</dict>
+			<dict>
+				<key>_name</key>
+				<string>UHCI Root Hub Simulation</string>
+				<key>controller_location</key>
+				<string>PCI</string>
+				<key>host_controller</key>
+				<string>AppleUSBUHCI</string>
+				<key>pci_device</key>
+				<string>0x7fff00002936 </string>
+				<key>pci_revision</key>
+				<string>0x7fff00000003 </string>
+				<key>pci_vendor</key>
+				<string>0x7fff00008086 </string>
+				<key>usb_bus_number</key>
+				<string>0x07 </string>
+			</dict>
+			<dict>
+				<key>_name</key>
+				<string>UHCI Root Hub Simulation</string>
+				<key>controller_location</key>
+				<string>PCI</string>
+				<key>host_controller</key>
+				<string>AppleUSBUHCI</string>
+				<key>pci_device</key>
+				<string>0x7fff00002935 </string>
+				<key>pci_revision</key>
+				<string>0x7fff00000003 </string>
+				<key>pci_vendor</key>
+				<string>0x7fff00008086 </string>
+				<key>usb_bus_number</key>
+				<string>0x06 </string>
+			</dict>
+		</array>
+		<key>_parentDataType</key>
+		<string>SPHardwareDataType</string>
+		<key>_properties</key>
+		<dict>
+			<key>_name</key>
+			<dict>
+				<key>_isColumn</key>
+				<string>YES</string>
+				<key>_isOutlineColumn</key>
+				<string>YES</string>
+				<key>_order</key>
+				<string>0</string>
+			</dict>
+			<key>bsd_name</key>
+			<dict>
+				<key>_order</key>
+				<string>42</string>
+			</dict>
+			<key>c_bcd_device</key>
+			<dict>
+				<key>_suppressLocalization</key>
+				<string>YES</string>
+			</dict>
+			<key>detachable_drive</key>
+			<dict>
+				<key>_order</key>
+				<string>39</string>
+			</dict>
+			<key>device_manufacturer</key>
+			<dict>
+				<key>_order</key>
+				<string>20</string>
+			</dict>
+			<key>device_model</key>
+			<dict>
+				<key>_order</key>
+				<string>22</string>
+			</dict>
+			<key>device_revision</key>
+			<dict>
+				<key>_order</key>
+				<string>24</string>
+			</dict>
+			<key>device_serial</key>
+			<dict>
+				<key>_order</key>
+				<string>26</string>
+			</dict>
+			<key>disc_burning</key>
+			<dict>
+				<key>_order</key>
+				<string>32</string>
+			</dict>
+			<key>file_system</key>
+			<dict>
+				<key>_order</key>
+				<string>40</string>
+			</dict>
+			<key>free_space</key>
+			<dict>
+				<key>_deprecated</key>
+				<true/>
+				<key>_order</key>
+				<string>12</string>
+			</dict>
+			<key>free_space_in_bytes</key>
+			<dict>
+				<key>_isByteSize</key>
+				<true/>
+				<key>_order</key>
+				<string>12</string>
+			</dict>
+			<key>mount_point</key>
+			<dict>
+				<key>_order</key>
+				<string>44</string>
+			</dict>
+			<key>optical_drive_type</key>
+			<dict>
+				<key>_order</key>
+				<string>30</string>
+			</dict>
+			<key>optical_media_type</key>
+			<dict>
+				<key>_order</key>
+				<string>31</string>
+			</dict>
+			<key>removable_media</key>
+			<dict>
+				<key>_order</key>
+				<string>34</string>
+			</dict>
+			<key>size</key>
+			<dict>
+				<key>_deprecated</key>
+				<true/>
+				<key>_order</key>
+				<string>10</string>
+			</dict>
+			<key>size_in_bytes</key>
+			<dict>
+				<key>_isByteSize</key>
+				<true/>
+				<key>_order</key>
+				<string>10</string>
+			</dict>
+			<key>volumes</key>
+			<dict>
+				<key>_detailLevel</key>
+				<string>0</string>
+			</dict>
+			<key>writable</key>
+			<dict>
+				<key>_order</key>
+				<string>36</string>
+			</dict>
+		</dict>
+		<key>_timeStamp</key>
+		<date>2025-09-28T04:51:10Z</date>
+		<key>_versionInfo</key>
+		<dict>
+			<key>com.apple.SystemProfiler.SPUSBReporter</key>
+			<string>74</string>
+		</dict>
+	</dict>
+</array>
+</plist>
