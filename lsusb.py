@@ -246,11 +246,14 @@ def SPThunderboltDataType_legacy(): # Mojave and older
         plist_to_json(DEBUG_FILE)
     else:
         result = subprocess.run(
-            ["system_profiler", "SPThunderboltDataType", "-xml", ">", "/tmp/lsusb.plist"],
+            ["system_profiler", "SPThunderboltDataType", "-xml"],
             capture_output=True,
             text=True,
             check=True,
         )
+
+        with open("/tmp/lsusb.plist", "w", encoding="utf-8") as f:
+            f.write(result.stdout)
 
         plist_to_json("/tmp/lsusb.plist")
 
