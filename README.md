@@ -26,21 +26,21 @@ ID: 2b89:0708 Ugreen Group Limited Thunderbolt 4 Docking Station (8-in-1)
 ```
 
 ## Compatibility
-| macOS Version | Python Version | USB | TB | Format        |
-| ------------- | -------------- | --- | -- | ------------- |
-| 10.6          | 3.7            |  ?  | X  | Legacy        |
-| 10.7          | 3.7            |  Y  | X  | Legacy        |
-| 10.8          | 3.7            |  Y  | X  | Legacy        |
-| 10.9          | 3.11           |  ?  | X  | Legacy        |
-| 10.10         | 3.11           |  Y  | X  | Modern - XML  |
-| 10.11         | 3.11           |  Y  | X  | Modern - XML  |
-| 10.12         | 3.11           |  Y  | X  | Modern - XML  |
-| 10.13         | 3.13           |  Y  | X  | Modern - XML  |
-| 10.14         | 3.13           |  Y  | X  | Modern - XML  |
-| 10.15         | 3.13           |  Y  | Y  | Modern - JSON |
-| 11            | 3.13           |  Y  | Y  | Modern - JSON |
-| 12            | 3.13           |  Y  | Y  | Modern - JSON |
-| 13            | 3.13           |  Y  | Y  | Modern - JSON |
-| 14            | 3.13           |  Y  | Y  | Modern - JSON |
-| 15            | 3.13           |  Y  | Y  | Modern - JSON |
-| 26            | 3.13           |  Y  | Y  | Host - JSON   |
+| macOS Version | Python Version | USB | TB | Format            |
+| ------------- | -------------- | --- | -- | ----------------- |
+| 10.6          | 3.7            |  ?  | X  | 1 - Legacy        |
+| 10.7          | 3.7            |  Y  | X  | 1 - Legacy        |
+| 10.8          | 3.7            |  Y  | X  | 1 - Legacy        |
+| 10.9          | 3.11           |  ?  | X  | 1 - Legacy        |
+| 10.10         | 3.11           |  Y  | X  | 2 - Modern - XML  |
+| 10.11         | 3.11           |  Y  | X  | 2 - Modern - XML  |
+| 10.12         | 3.11           |  Y  | X  | 2 - Modern - XML  |
+| 10.13         | 3.13           |  Y  | X  | 2 - Modern - XML  |
+| 10.14         | 3.13           |  Y  | X  | 2 - Modern - XML  |
+| 10.15         | 3.13           |  Y  | Y  | 3 - Modern - JSON |
+| 11            | 3.13           |  Y  | Y  | 3 - Modern - JSON |
+| 12            | 3.13           |  Y  | Y  | 3 - Modern - JSON |
+| 13            | 3.13           |  Y  | Y  | 3 - Modern - JSON |
+| 14            | 3.13           |  Y  | Y  | 3 - Modern - JSON |
+| 15            | 3.13           |  Y  | Y  | 3 - Modern - JSON |
+| 26            | 3.13           |  Y  | Y  | 4 - Host - JSON   |

@@ -14,11 +14,21 @@ filt_vid = None
 filt_pid = None
 
 def clean_macos_version(raw):
+    global VERSION
     raw = raw.split(".")
     if raw[0] == "10" and int(raw[1]) < 10:
         macos_version = float((f"{raw[0]}.0{raw[1]}"))
     else:
         macos_version = float((f"{raw[0]}.{raw[1]}"))
+    
+    if macos_version >= 26.0:
+        VERSION = 4
+    elif macos_version >= 10.15 and macos_version < 26.0:
+        VERSION = 3
+    elif macos_version >= 10.10 and macos_version < 10.15:
+        VERSION = 2
+    else:
+        VERSION = 1
     
     return macos_version
 
@@ -84,11 +94,11 @@ def plist_to_json(path) -> None:
 
 def extract_features(dev, location_id, VID, PID, MFR, NAME, VERSION):
     # The only parts that are 100% consistent among versions
-    name = dev.get(NAME) or "-"
-    pid = clean_hex(dev.get(PID)) or "-"
+    name = dev.get(NAME[VERSION - 1]) or "-"
+    pid = clean_hex(dev.get(PID[VERSION - 1])) or "-"
 
-    if location_id != None:
-        l_id = clean_hex(dev.get(location_id)) or "-"
+    if location_id[VERSION - 1] != None:
+        l_id = clean_hex(dev.get(location_id[VERSION - 1])) or "-"
         if VERSION != 4:
             l_id = l_id.split(" / ")[0]
     else:
@@ -98,12 +108,12 @@ def extract_features(dev, location_id, VID, PID, MFR, NAME, VERSION):
     # 3 - Catalina - Sequoia
     # 2 - Yosmite - Mojave
     # 1 - Mavricks and Older
-    if VERSION != 3:
-        mfr = dev.get(MFR) or "-"
-        vid = clean_hex(dev.get(VID) or "-")
-    elif VERSION == 3:
+    if VERSION != 3 or VERSION == 3 and l_id == None:
+        mfr = dev.get(MFR[VERSION - 1]) or "-"
+        vid = clean_hex(dev.get(VID[VERSION - 1]) or "-")
+    elif VERSION == 3 and l_id != None:
         # VID includes both the manufacturer and the VID for some reason
-        vid = dev.get("vendor_id") or "-"
+        vid = dev.get(VID[VERSION - 1]) or "-"
 
         # Apple is actually fucking insane, instead of you know, putting down their actual USB VID they just supply "apple_vendor_id"
         if vid != "apple_vendor_id":
@@ -113,7 +123,7 @@ def extract_features(dev, location_id, VID, PID, MFR, NAME, VERSION):
         else:
             vid = "05ac" # Pretty sure this is apple's VID
             # Apple doesnt add on the company name to the VID so we get it from the feild thats usally less detailed, execpt for themselves
-            mfr = dev.get("manufacturer") or "-"
+            mfr = dev.get(MFR[VERSION - 1]) or "-"
 
     # Collapse whitespace in name/manufacturer so it's clean on one line
     mfr = " ".join(str(mfr).split())
@@ -183,78 +193,58 @@ def get_json(VERSION, TYPE):
     
     return data
 
-def SPUSBHostDataType(): # Tahoe and Newer USB
-    data = get_json(4, "USB")
+USB_DATA_PROPERTIES = {
+            # 10.7 - 10.9      10.10 - 10.14   10.15 - 15.X.    26.0+  
+    "LID": ["g_location_id",   "location_id", "location_id",    "USBKeyLocationID"],
+    "VID": ["b_vendor_id",     "vendor_id",    "vendor_id",     "USBDeviceKeyVendorID"],
+    "PID": ["a_product_id",    "product_id",   "product_id",    "USBDeviceKeyProductID"],
+    "MFR": ["f_manufacturer",  "manufacturer", "manufacturer",  "USBDeviceKeyVendorName"],
+    "NAME": ["_name",          "_name",        "_name",         "_name"],
+    "HEAD": ["_items",         "_items",       "SPUSBDataType", "SPUSBHostDataType"]
+}
+
+TB_DATA_PROPERTIES = {
+            # Unsupported.  10.15 - 15.X             26.0+
+    "LID":  [None, None,    None,                    None], # This is kinda still a janky workaround becasue i want to share as much as i can between USB and TB as i can but i dont wanna make it overly complex either
+    "VID":  [None, None,    "vendor_id_key",         "vendor_id_key"],
+    "PID":  [None, None,    "device_id_key",         "device_id_key"],
+    "MFR":  [None, None,    "vendor_name_key",       "vendor_name_key"],
+    "NAME": [None, None,    "_name",                 "_name"],
+    "HEAD": [None, None,    "SPThunderboltDataType", "SPThunderboltDataType"]
+}
+
+def SPUSBMerged(VERSION): # 10.7+
+    data = get_json(VERSION, "USB")
     lines = []
+
     def process_devices(items, depth=0):
         for dev in items or []:
-            l_id, vid, pid, mfr, name = extract_features(dev, "USBKeyLocationID", "USBDeviceKeyVendorID", "USBDeviceKeyProductID", "USBDeviceKeyVendorName", "_name", 4)
+            l_id, vid, pid, mfr, name = extract_features(dev, USB_DATA_PROPERTIES["LID"], USB_DATA_PROPERTIES["VID"], USB_DATA_PROPERTIES["PID"], USB_DATA_PROPERTIES["MFR"], USB_DATA_PROPERTIES["NAME"], VERSION)
             if filter_vid_pid(filt_vid, vid, filt_pid, pid) == True:
                 lines.append(f"Location: {l_id}: ID {vid}:{pid} {mfr} {name}")
             
             child_items = dev.get("_items")
             if isinstance(child_items, list) and child_items:
                 process_devices(child_items, depth + 1)
-
-    for top in data.get("SPUSBHostDataType", []):
-        process_devices(top.get("_items", []), depth=0)
-
-    return lines
-
-def SPUSBDataType(VERSION): # Yosemite - Sequoia USB
-    data = get_json(VERSION, "USB")
-    lines = []
-
-    def process_devices(items, depth=0):
-        for dev in items or []:
-            l_id, vid, pid, mfr, name = extract_features(dev, "location_id", "vendor_id", "product_id", "manufacturer", "_name", VERSION)
-
-            if filter_vid_pid(filt_vid, vid, filt_pid, pid) == True:
-                lines.append(f"Location: {l_id}: ID {vid}:{pid} {mfr} {name}")
-
-            child_items = dev.get("_items")
-            if isinstance(child_items, list) and child_items:
-                process_devices(child_items, depth + 1)
-
-    if VERSION == 3:
-        hubs = data.get("SPUSBDataType", [])
+    
+    if VERSION > 2:
+        source = data
     else:
-        hubs = data[0].get("_items", []) or []
-
-    for top in hubs:
+        source = data[0]
+    
+    for top in source.get(USB_DATA_PROPERTIES["HEAD"][VERSION - 1], []):
         process_devices(top.get("_items", []), depth=0)
-
+    
     return lines
 
-def SPUSBDataType_legacy(): # Snow Leopard - Mavericks
-    data = get_json(1, "USB")
-    lines = []
-
-    def process_devices(items, depth=0):
-        for dev in items or []:
-            l_id, vid, pid, mfr, name = extract_features(dev, "g_location_id", "b_vendor_id", "a_product_id", "f_manufacturer", "_name", 1)
-
-            if filter_vid_pid(filt_vid, vid, filt_pid, pid) == True:
-                lines.append(f"Location: {l_id}: ID {vid}:{pid} {mfr} {name}")
-
-            child_items = dev.get("_items")
-            if isinstance(child_items, list) and child_items:
-                process_devices(child_items, depth + 1)
-
-    hubs = data[0].get("_items", []) or []
-    for top in hubs:
-        process_devices(top.get("_items", []), depth=0)
-
-    return lines
-
-def SPThunderboltDataType(VERSION): # Yosemite and newer
+def SPThunderboltDataType(VERSION): # Catalina and newer
     data = get_json(VERSION, "TB")
     lines = []
 
     def process_devices(items, depth=0):
         for dev in items or []:
             # Note: These arent a direct eqivilant to normal USB VID and PIDs
-            l_id, vid, pid, mfr, name = extract_features(dev, None, "vendor_id_key", "device_id_key", "vendor_name_key", "_name", 4)
+            l_id, vid, pid, mfr, name = extract_features(dev, TB_DATA_PROPERTIES["LID"], TB_DATA_PROPERTIES["VID"], TB_DATA_PROPERTIES["PID"], TB_DATA_PROPERTIES["MFR"], TB_DATA_PROPERTIES["NAME"], VERSION)
 
             if filter_vid_pid(filt_vid, vid, filt_pid, pid) == True:
                 lines.append(f"ID {vid}:{pid} {mfr} {name}")
@@ -264,12 +254,11 @@ def SPThunderboltDataType(VERSION): # Yosemite and newer
             if isinstance(child_items, list) and child_items:
                 process_devices(child_items, depth + 1)
     
-    if VERSION >= 3:
-        hubs = data.get("SPThunderboltDataType", [])
+    if VERSION > 2:
+        source = data
     else:
-        hubs = data[0].get("_items", []) or []
-
-    for top in hubs:
+        source = data[0]
+    for top in source.get(TB_DATA_PROPERTIES["HEAD"][VERSION - 1], []):
         process_devices(top.get("_items", []), depth=0)
 
     return lines
@@ -281,20 +270,11 @@ else:
     sys.exit("This script is only supported on macOS") 
 
 if VERBOSE == False:
-    if macos_version >= 26.0:
-        usb = SPUSBHostDataType() # Tahoe and Newer
-        tb = SPThunderboltDataType(4)
-    elif macos_version >= 10.15 and macos_version < 26.0:
-        usb = SPUSBDataType(3) # Catalina - Sequoia
-        tb = SPThunderboltDataType(3)
-    elif macos_version >= 10.10 and macos_version < 10.15:
-        usb = SPUSBDataType(2) # Yosemite - Mojave
-        tb = []
-        #tb = SPThunderboltDataType(2)
+    usb = SPUSBMerged(VERSION)
+    if VERSION > 2:
+        tb = SPThunderboltDataType(VERSION)
     else:
-        usb = SPUSBDataType_legacy()
         tb = []
-        #tb = SPThunderboltDataType(1)
 
     if usb != []:
         print("USB Devies:")
