@@ -205,15 +205,22 @@ def get_json(VERSION, TYPE):
     
     return data
 
-def SPUSBMerged(VERSION): # 10.7+
-    data = get_json(VERSION, "USB")
+def SPDataType(VERSION, TYPE):
+    data = get_json(VERSION, TYPE)
+    if TYPE == "USB":
+        DATA_PROPERTIES = USB_DATA_PROPERTIES
+    else:
+        DATA_PROPERTIES = TB_DATA_PROPERTIES
     lines = []
 
     def process_devices(items, depth=0):
         for dev in items or []:
-            l_id, vid, pid, mfr, name = extract_features(dev, USB_DATA_PROPERTIES["LID"], USB_DATA_PROPERTIES["VID"], USB_DATA_PROPERTIES["PID"], USB_DATA_PROPERTIES["MFR"], USB_DATA_PROPERTIES["NAME"], VERSION)
+            l_id, vid, pid, mfr, name = extract_features(dev, DATA_PROPERTIES["LID"], DATA_PROPERTIES["VID"], DATA_PROPERTIES["PID"], DATA_PROPERTIES["MFR"], DATA_PROPERTIES["NAME"], VERSION)
             if filter_vid_pid(filt_vid, vid, filt_pid, pid) == True:
-                lines.append(f"Location: {l_id}: ID {vid}:{pid} {mfr} {name}")
+                if l_id != None:
+                    lines.append(f"Location: {l_id}: ID {vid}:{pid} {mfr} {name}")
+                else:
+                    lines.append(f"ID {vid}:{pid} {mfr} {name}")
             
             child_items = dev.get("_items")
             if isinstance(child_items, list) and child_items:
@@ -224,35 +231,9 @@ def SPUSBMerged(VERSION): # 10.7+
     else:
         source = data[0]
     
-    for top in source.get(USB_DATA_PROPERTIES["HEAD"][VERSION - 1], []):
+    for top in source.get(DATA_PROPERTIES["HEAD"][VERSION - 1], []):
         process_devices(top.get("_items", []), depth=0)
     
-    return lines
-
-def SPThunderboltDataType(VERSION): # Catalina and newer
-    data = get_json(VERSION, "TB")
-    lines = []
-
-    def process_devices(items, depth=0):
-        for dev in items or []:
-            # Note: These arent a direct eqivilant to normal USB VID and PIDs
-            l_id, vid, pid, mfr, name = extract_features(dev, TB_DATA_PROPERTIES["LID"], TB_DATA_PROPERTIES["VID"], TB_DATA_PROPERTIES["PID"], TB_DATA_PROPERTIES["MFR"], TB_DATA_PROPERTIES["NAME"], VERSION)
-
-            if filter_vid_pid(filt_vid, vid, filt_pid, pid) == True:
-                lines.append(f"ID {vid}:{pid} {mfr} {name}")
-
-            # I dont have another TB / USB 4 device to test with but this should work? 
-            child_items = dev.get("_items")
-            if isinstance(child_items, list) and child_items:
-                process_devices(child_items, depth + 1)
-    
-    if VERSION > 2:
-        source = data
-    else:
-        source = data[0]
-    for top in source.get(TB_DATA_PROPERTIES["HEAD"][VERSION - 1], []):
-        process_devices(top.get("_items", []), depth=0)
-
     return lines
 
 if platform.system() == "Darwin":
@@ -262,9 +243,11 @@ else:
     sys.exit("This script is only supported on macOS") 
 
 if VERBOSE == False:
-    usb = SPUSBMerged(VERSION)
+    #usb = SPUSBMerged(VERSION)
+    usb = SPDataType(VERSION, "USB")
     if VERSION > 2:
-        tb = SPThunderboltDataType(VERSION)
+        #tb = SPThunderboltDataType(VERSION)
+        tb = SPDataType(VERSION, "TB")
     else:
         tb = []
 
@@ -280,28 +263,17 @@ if VERBOSE == False:
     if usb == [] and tb == []:
         print("No Devices Connected / Detected!")
 else:
-    if macos_version >= 26.0:
-        # Tahoe and Newer
-        result = subprocess.run(
-            ["system_profiler", "SPUSBHostDataType"],
+    result = subprocess.run(
+            ["system_profiler", USB_DATA_PROPERTIES["ARG1"][VERSION - 1]],
             capture_output=True,
             text=True,
             check=True,
         )
-        print(result.stdout)
-    else:
-        # Pre Tahoe
-        result = subprocess.run(
-            ["system_profiler", "SPUSBDataType"],
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-        print(result.stdout)
-    
+    print(result.stdout)
+
     # Thunderbolt
     result = subprocess.run(
-        ["system_profiler", "SPThunderboltDataType"],
+        ["system_profiler", TB_DATA_PROPERTIES["ARG1"][VERSION - 1]],
         capture_output=True,
         text=True,
         check=True,
