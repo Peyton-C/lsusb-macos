@@ -51,6 +51,43 @@ def plist_to_json(path) -> None:
     with open("/tmp/lsusb.json", "w", encoding="utf-8") as out:
         json.dump(data, out, ensure_ascii=False, indent=2, sort_keys=True, default=default)
 
+def extract_features(dev, location_id, VID, PID, MFR, NAME, VERSION):
+    # The only parts that are 100% consistent among versions
+    l_id = clean_hex(dev.get(location_id)) or "-"
+    name = dev.get(NAME) or "-"
+    pid = clean_hex(dev.get(PID)) or "-"
+
+    # 4 - Tahoe and Newer
+    # 3 - Catalina - Sequoia
+    # 2 - Yosmite - Mojave
+    # 1 - Mavricks and Older
+    if VERSION != 3:
+        mfr = dev.get(MFR) or "-"
+        vid = clean_hex(dev.get(VID) or "-")
+    elif VERSION == 3:
+        # VID includes both the manufacturer and the VID for some reason
+        vid = dev.get("vendor_id") or "-"
+
+        # Apple is actually fucking insane, instead of you know, putting down their actual USB VID they just supply "apple_vendor_id"
+        if vid != "apple_vendor_id":
+            vid, mfr = vid.split("  ") # "vendor_id" : "0x154b  (PNY Technologies Inc.)"
+            vid = clean_hex(vid)
+            mfr = mfr.strip("()")
+        else:
+            vid = "05ac" # Pretty sure this is apple's VID
+            # Apple doesnt add on the company name to the VID so we get it from the feild thats usally less detailed, execpt for themselves
+            mfr = dev.get("manufacturer") or "-"
+    
+    if VERSION != 4:
+        l_id = l_id.split(" / ")[0]
+
+    # Collapse whitespace in name/manufacturer so it's clean on one line
+    mfr = " ".join(str(mfr).split())
+    name = " ".join(str(name).split())
+    
+    return l_id, vid, pid, mfr, name
+
+
 def SPUSBHostDataType(): # Tahoe and Newer USB
     if DEBUG == True and DEBUG_TYPE == "USB":
         f = open(DEBUG_FILE)
@@ -67,15 +104,7 @@ def SPUSBHostDataType(): # Tahoe and Newer USB
     lines = []
     def process_devices(items, depth=0):
         for dev in items or []:
-            l_id = clean_hex(dev.get("USBKeyLocationID")) or "-"
-            vid = clean_hex(dev.get("USBDeviceKeyVendorID")) or "-"
-            pid = clean_hex(dev.get("USBDeviceKeyProductID")) or "-"
-            mfr = dev.get("USBDeviceKeyVendorName") or "-"
-            name = dev.get("_name") or "-"    
-
-            # Collapse whitespace in name/manufacturer so it's clean on one line
-            mfr = " ".join(str(mfr).split())
-            name = " ".join(str(name).split())
+            l_id, vid, pid, mfr, name = extract_features(dev, "USBKeyLocationID", "USBDeviceKeyVendorID", "USBDeviceKeyProductID", "USBDeviceKeyVendorName", "_name", 4)
 
             # VID / PID Filter
             if filt_vid == None and filt_pid == None:
@@ -135,33 +164,11 @@ def SPUSBDataType(FORMAT): # Yosemite - Sequoia USB
     lines = []
     def process_devices(items, depth=0):
         for dev in items or []:
-            l_id = clean_hex(dev.get("location_id")) or "-"
-            pid = clean_hex(dev.get("product_id")) or "-"
-            name = dev.get("_name") or "-"    
-
             if FORMAT == "JSON":
-                # VID includes both the manufacturer and the VID for some reason
-                vid = dev.get("vendor_id") or "-"
-
-                # Apple is actually fucking insane, instead of you know, putting down their actual USB VID they just supply "apple_vendor_id"
-                if vid != "apple_vendor_id":
-                    vid, mfr = vid.split("  ") # "vendor_id" : "0x154b  (PNY Technologies Inc.)"
-                    vid = clean_hex(vid)
-                    mfr = mfr.strip("()")
-                else:
-                    vid = "05ac" # Pretty sure this is apple's VID
-                    # Apple doesnt add on the company name to the VID so we get it from the feild thats usally less detailed, execpt for themselves
-                    mfr = dev.get("manufacturer") or "-"
-            else:
-                vid = clean_hex(dev.get("vendor_id")) or "-"
-                mfr = dev.get("manufacturer") or "-"
-
-            # The / # at the end of location IDs looks kinda ugly and is only sometimes there so im removing it
-            l_id = l_id.split(" / ")[0]
-
-            # Collapse whitespace in name/manufacturer so it's clean on one line
-            mfr = " ".join(str(mfr).split())
-            name = " ".join(str(name).split())
+                VERSION = 3
+            elif FORMAT == "XML":
+                VERSION = 2
+            l_id, vid, pid, mfr, name = extract_features(dev, "location_id", "vendor_id", "product_id", "manufacturer", "_name", VERSION)
 
             lines.append(f"Location: {l_id}: ID {vid}:{pid} {mfr} {name}")
 
@@ -206,18 +213,7 @@ def SPUSBDataType_legacy(): # Snow Leopard - Mavericks
     lines = []
     def process_devices(items, depth=0):
         for dev in items or []:
-            name = dev.get("_name") or "-"    
-            pid = clean_hex(dev.get("a_product_id")) or "-"
-            vid = clean_hex(dev.get("b_vendor_id")) or "-"
-            mfr = dev.get("f_manufacturer") or "-"
-            l_id = clean_hex(dev.get("g_location_id")) or "-"
-
-            # The / # at the end of location IDs looks kinda ugly and is only sometimes there so im removing it
-            l_id = l_id.split(" / ")[0]
-
-            # Collapse whitespace in name/manufacturer so it's clean on one line
-            mfr = " ".join(str(mfr).split())
-            name = " ".join(str(name).split())
+            l_id, vid, pid, mfr, name = extract_features(dev, "g_location_id", "b_vendor_id", "a_product_id", "f_manufacturer", "_name", 1)
 
             lines.append(f"Location: {l_id}: ID {vid}:{pid} {mfr} {name}")
 
