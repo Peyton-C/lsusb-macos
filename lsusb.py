@@ -8,8 +8,8 @@ import os
 import argparse
 
 VERBOSE = False
-DEBUG = False
-DEBUG_TYPE = None
+DEBUG_TYPE = [False, False]
+DEBUG_FILE = ["", ""]
 filt_vid = None
 filt_pid = None
 
@@ -23,7 +23,7 @@ def clean_macos_version(raw):
     return macos_version
 
 def arguments():
-    global DEBUG, DEBUG_FILE, DEBUG_FILE, DEBUG_TYPE, macos_version, filt_pid, filt_vid, VERBOSE
+    global DEBUG_FILE, DEBUG_TYPE, macos_version, filt_pid, filt_vid, VERBOSE
     parser = argparse.ArgumentParser(
         prog="lsusb-macos",
         description="Display connected USB and Thunderbolt Devices on macOS / Mac OS X"
@@ -31,16 +31,26 @@ def arguments():
 
     parser.add_argument("-v", "--verbose", help="Output the raw information from system_profiler")
     parser.add_argument("-d", nargs=1, metavar=("Vendor:Product"), help="Show only devices with the specified vendor and product ID numbers (in Hexadecimal) ")
-    parser.add_argument("-D", "--debug", nargs=3, metavar=("Type", "File", "OS Version"), help="Simulate Connected Devices, Type (USB|TB), File (JSON or XML) and OS version")
+    parser.add_argument("-D", "--debug", nargs=2, metavar=("Type", "File"), action="append", help="Simulate Connected Devices, Type (USB|TB) and File (JSON or XML)")
+    parser.add_argument("-os", "--osver", help="Debug OS Version (ie 10.7, 10.13, 15.5, 26.1, etc)")
 
     args = parser.parse_args()
 
     if args.verbose:
         VERBOSE == True
     if args.debug:
-        DEBUG = True
-        DEBUG_TYPE, DEBUG_FILE, mv_unclean = args.debug
-        macos_version = clean_macos_version(mv_unclean)
+        if not args.osver:
+            sys.exit("OS Version required for debugging")
+        for t, f in args.debug:
+            if t == "USB":
+                DEBUG_TYPE[0] = True
+                DEBUG_FILE[0] = f
+            elif t == "TB":
+                DEBUG_TYPE[1] = True
+                DEBUG_FILE[1] = f
+        
+        macos_version = clean_macos_version(args.osver)
+
     if args.d:
         filt_vid, filt_pid = args.d.split(":")
 
@@ -124,12 +134,12 @@ def get_json(VERSION):
         3: ["SPUSBDataType", "-json"],
         4: ["SPUSBHostDataType", "-json"]
     }
-
-    if DEBUG == True and DEBUG_TYPE == "USB":
+    
+    if DEBUG_TYPE[0] == True:
         if VERSION >= 3:
-            f = open(DEBUG_FILE)
+            f = open(DEBUG_FILE[0])
         elif VERSION <= 2:
-            plist_to_json(DEBUG_FILE)
+            plist_to_json(DEBUG_FILE[0])
             f = open("/tmp/lsusb.json")
         data = json.load(f)
     else:
@@ -223,8 +233,8 @@ def SPUSBDataType_legacy(): # Snow Leopard - Mavericks
 
 def SPThunderboltDataType(FORMAT): # Yosemite and newer
     if FORMAT == "JSON":
-        if DEBUG == True and DEBUG_TYPE == "TB":
-            f = open(DEBUG_FILE)
+        if DEBUG_TYPE[1] == True:
+            f = open(DEBUG_FILE[1])
             data = json.load(f)
         else:
             result = subprocess.run(
@@ -235,8 +245,8 @@ def SPThunderboltDataType(FORMAT): # Yosemite and newer
             )
             data = json.loads(result.stdout)
     else:
-        if DEBUG == True and DEBUG_TYPE == "TB":
-            plist_to_json(DEBUG_FILE)
+        if DEBUG_TYPE[1] == True:
+            plist_to_json(DEBUG_FILE[1])
         else:
             if os.path.exists("/tmp/lsusb.plist"):
                 os.remove("/tmp/lsusb.plist")
