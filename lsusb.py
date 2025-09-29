@@ -13,6 +13,30 @@ DEBUG_FILE = ["", ""]
 filt_vid = None
 filt_pid = None
 
+USB_DATA_PROPERTIES = {
+            # 10.7 - 10.9      10.10 - 10.14     10.15 - 15.X.    26.0+
+    "ARG1": ["SPUSBDataType",   "SPUSBDataType", "SPUSBDataType", "SPUSBHostDataType"],
+    "ARG2": ["-xml",            "-xml",          "-json",         "-json"],
+    "LID":  ["g_location_id",   "location_id",   "location_id",   "USBKeyLocationID"],
+    "VID":  ["b_vendor_id",     "vendor_id",     "vendor_id",     "USBDeviceKeyVendorID"],
+    "PID":  ["a_product_id",    "product_id",    "product_id",    "USBDeviceKeyProductID"],
+    "MFR":  ["f_manufacturer",  "manufacturer",  "manufacturer",  "USBDeviceKeyVendorName"],
+    "NAME": ["_name",          "_name",          "_name",         "_name"],
+    "HEAD": ["_items",         "_items",         "SPUSBDataType", "SPUSBHostDataType"]
+}
+
+TB_DATA_PROPERTIES = {
+            # Unsupported.  10.15 - 15.X             26.0+
+    "ARG1": [None, None,    "SPThunderboltDataType", "SPThunderboltDataType"],
+    "ARG2": [None, None,    "-json",                 "-json"],
+    "LID":  [None, None,    None,                    None], # This is kinda still a janky workaround becasue i want to share as much as i can between USB and TB as i can but i dont wanna make it overly complex either
+    "VID":  [None, None,    "vendor_id_key",         "vendor_id_key"],
+    "PID":  [None, None,    "device_id_key",         "device_id_key"],
+    "MFR":  [None, None,    "vendor_name_key",       "vendor_name_key"],
+    "NAME": [None, None,    "_name",                 "_name"],
+    "HEAD": [None, None,    "SPThunderboltDataType", "SPThunderboltDataType"]
+}
+
 def clean_macos_version(raw):
     global VERSION
     raw = raw.split(".")
@@ -21,6 +45,7 @@ def clean_macos_version(raw):
     else:
         macos_version = float((f"{raw[0]}.{raw[1]}"))
     
+    # A switch statement would work better here but that would mean dropping 10.6-10.8 support
     if macos_version >= 26.0:
         VERSION = 4
     elif macos_version >= 10.15 and macos_version < 26.0:
@@ -141,24 +166,11 @@ def filter_vid_pid(filt_vid, vid, filt_pid, pid):
             return False
 
 def get_json(VERSION, TYPE):
-    command_usb = {
-        1: ["SPUSBDataType", "-xml"],
-        2: ["SPUSBDataType", "-xml"],
-        3: ["SPUSBDataType", "-json"],
-        4: ["SPUSBHostDataType", "-json"]
-    }
-    command_tb = {
-        1: ["SPThunderboltDataType", "-xml"],
-        2: ["SPThunderboltDataType", "-xml"],
-        3: ["SPThunderboltDataType", "-json"],
-        4: ["SPThunderboltDataType", "-json"]
-    }
-
     if TYPE == "USB":
-        command = command_usb
+        command = USB_DATA_PROPERTIES
         DEBUG_INDEX = 0
     else:
-        command = command_tb
+        command = TB_DATA_PROPERTIES
         DEBUG_INDEX = 1
 
     if DEBUG_TYPE[DEBUG_INDEX] == True:
@@ -170,7 +182,7 @@ def get_json(VERSION, TYPE):
         data = json.load(f)
     else:
         result = subprocess.run(
-            ["system_profiler", command[VERSION][0], command[VERSION][1]],
+            ["system_profiler", command["ARG1"][VERSION - 1], command["ARG2"][VERSION - 1]],
             capture_output=True,
             text=True,
             check=True,
@@ -192,26 +204,6 @@ def get_json(VERSION, TYPE):
             data = json.load(f)
     
     return data
-
-USB_DATA_PROPERTIES = {
-            # 10.7 - 10.9      10.10 - 10.14   10.15 - 15.X.    26.0+  
-    "LID": ["g_location_id",   "location_id", "location_id",    "USBKeyLocationID"],
-    "VID": ["b_vendor_id",     "vendor_id",    "vendor_id",     "USBDeviceKeyVendorID"],
-    "PID": ["a_product_id",    "product_id",   "product_id",    "USBDeviceKeyProductID"],
-    "MFR": ["f_manufacturer",  "manufacturer", "manufacturer",  "USBDeviceKeyVendorName"],
-    "NAME": ["_name",          "_name",        "_name",         "_name"],
-    "HEAD": ["_items",         "_items",       "SPUSBDataType", "SPUSBHostDataType"]
-}
-
-TB_DATA_PROPERTIES = {
-            # Unsupported.  10.15 - 15.X             26.0+
-    "LID":  [None, None,    None,                    None], # This is kinda still a janky workaround becasue i want to share as much as i can between USB and TB as i can but i dont wanna make it overly complex either
-    "VID":  [None, None,    "vendor_id_key",         "vendor_id_key"],
-    "PID":  [None, None,    "device_id_key",         "device_id_key"],
-    "MFR":  [None, None,    "vendor_name_key",       "vendor_name_key"],
-    "NAME": [None, None,    "_name",                 "_name"],
-    "HEAD": [None, None,    "SPThunderboltDataType", "SPThunderboltDataType"]
-}
 
 def SPUSBMerged(VERSION): # 10.7+
     data = get_json(VERSION, "USB")
