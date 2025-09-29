@@ -87,13 +87,20 @@ def extract_features(dev, location_id, VID, PID, MFR, NAME, VERSION):
     
     return l_id, vid, pid, mfr, name
 
-def filter_vid_pid(lines, filt_vid, filt_pid, l_id, vid, pid, mfr, name):
+def filter_vid_pid(lines, type, filt_vid, filt_pid, l_id, vid, pid, mfr, name):
     # VID / PID Filter
-    if filt_vid == None and filt_pid == None:
-        lines.append(f"Location: {l_id}: ID {vid}:{pid} {mfr} {name}")
-    else:
-        if vid == filt_vid and pid == filt_pid:
+    if type == "USB":
+        if filt_vid == None and filt_pid == None:
             lines.append(f"Location: {l_id}: ID {vid}:{pid} {mfr} {name}")
+        else:
+            if vid == filt_vid and pid == filt_pid:
+                lines.append(f"Location: {l_id}: ID {vid}:{pid} {mfr} {name}")
+    else:
+        if filt_vid == None and filt_pid == None:
+                lines.append(f"ID: {vid}:{pid} {mfr} {name}")
+        else:
+            if vid == filt_vid and pid == filt_pid:
+                lines.append(f"ID: {vid}:{pid} {mfr} {name}")
 
 def SPUSBHostDataType(): # Tahoe and Newer USB
     if DEBUG == True and DEBUG_TYPE == "USB":
@@ -112,7 +119,7 @@ def SPUSBHostDataType(): # Tahoe and Newer USB
     def process_devices(items, depth=0):
         for dev in items or []:
             l_id, vid, pid, mfr, name = extract_features(dev, "USBKeyLocationID", "USBDeviceKeyVendorID", "USBDeviceKeyProductID", "USBDeviceKeyVendorName", "_name", 4)
-            filter_vid_pid(lines, filt_vid, filt_pid, l_id, vid, pid, mfr, name)
+            filter_vid_pid(lines, "USB", filt_vid, filt_pid, l_id, vid, pid, mfr, name)
             child_items = dev.get("_items")
             if isinstance(child_items, list) and child_items:
                 process_devices(child_items, depth + 1)
@@ -122,9 +129,9 @@ def SPUSBHostDataType(): # Tahoe and Newer USB
 
     return lines
 
-def SPUSBDataType(FORMAT): # Yosemite - Sequoia USB
+def SPUSBDataType(VERSION): # Yosemite - Sequoia USB
     # Catalina - Sequoia
-    if FORMAT == "JSON":
+    if VERSION == 3:
         if DEBUG == True and DEBUG_TYPE == "USB":
             f = open(DEBUG_FILE)
             data = json.load(f)
@@ -164,19 +171,15 @@ def SPUSBDataType(FORMAT): # Yosemite - Sequoia USB
     lines = []
     def process_devices(items, depth=0):
         for dev in items or []:
-            if FORMAT == "JSON":
-                VERSION = 3
-            elif FORMAT == "XML":
-                VERSION = 2
             l_id, vid, pid, mfr, name = extract_features(dev, "location_id", "vendor_id", "product_id", "manufacturer", "_name", VERSION)
 
-            filter_vid_pid(lines, filt_vid, filt_pid, l_id, vid, pid, mfr, name)
+            filter_vid_pid(lines, "USB", filt_vid, filt_pid, l_id, vid, pid, mfr, name)
 
             child_items = dev.get("_items")
             if isinstance(child_items, list) and child_items:
                 process_devices(child_items, depth + 1)
 
-    if FORMAT == "JSON":
+    if VERSION == 3:
         hubs = data.get("SPUSBDataType", [])
     else:
         hubs = data[0].get("_items", []) or []
@@ -215,7 +218,7 @@ def SPUSBDataType_legacy(): # Snow Leopard - Mavericks
         for dev in items or []:
             l_id, vid, pid, mfr, name = extract_features(dev, "g_location_id", "b_vendor_id", "a_product_id", "f_manufacturer", "_name", 1)
 
-            filter_vid_pid(lines, filt_vid, filt_pid, l_id, vid, pid, mfr, name)
+            filter_vid_pid(lines, "USB", filt_vid, filt_pid, l_id, vid, pid, mfr, name)
 
             child_items = dev.get("_items")
             if isinstance(child_items, list) and child_items:
@@ -278,12 +281,7 @@ def SPThunderboltDataType(FORMAT): # Yosemite and newer
             mfr = " ".join(str(mfr).split())
             name = " ".join(str(name).split())
 
-            # VID / PID Filter
-            if filt_vid == None and filt_pid == None:
-                lines.append(f"ID: {vid}:{pid} {mfr} {name}")
-            else:
-                if vid == filt_vid and pid == filt_pid:
-                    lines.append(f"ID: {vid}:{pid} {mfr} {name}")
+            filter_vid_pid(lines, "TB", filt_vid, filt_pid, None, vid, pid, mfr, name)
 
             # I dont have another TB / USB 4 device to test with but this should work? 
             child_items = dev.get("_items")
@@ -334,9 +332,9 @@ if VERBOSE == False:
         tb = SPThunderboltDataType("JSON")
     elif macos_version >= 10.15 and macos_version < 26.0:
         usb = SPUSBDataType("JSON") # Catalina - Sequoia
-        tb = SPThunderboltDataType("JSON")
+        tb = SPThunderboltDataType(3)
     elif macos_version >= 10.10 and macos_version < 10.15:
-        usb = SPUSBDataType("XML") # Yosemite - Mojave
+        usb = SPUSBDataType(2) # Yosemite - Mojave
         tb = []
         #tb = SPThunderboltDataType("XML")
     else:
@@ -373,7 +371,6 @@ else:
             check=True,
         )
         print(result.stdout)
-    
     
     # Thunderbolt
     result = subprocess.run(
