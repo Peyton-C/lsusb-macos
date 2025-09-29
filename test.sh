@@ -10,7 +10,7 @@ python3 ./lsusb.py -D TB ./json_examples/tahoe_tb.json 26.1
 
 # Sequoia - Catalina
 printf "\nSequoia - USB\n"
-python3 ./lsusb.py -D USB ./json_examples/sequoia_intel_usb_full.json 15
+python3 ./lsusb.py -D USB ./json_examples/sequoia_intel_usb_full.json 15.5
 
 printf "\nSequoia - Thunderbolt / USB 4"
 python3 ./lsusb.py -D TB ./json_examples/sequoia_intel_tb.json 26.1
@@ -21,4 +21,4 @@ python3 ./lsusb.py -D USB ./json_examples/hs_xml_usb_basic.plist 10.13
 
 # Mavricks and Older
 printf "\nMavricks - USB\n"
-python3 ./lsusb.py -D USB ./json_examples/lion_xml_usb_basic.plist 10.07
+python3 ./lsusb.py -D USB ./json_examples/lion_xml_usb_basic.plist 10.7

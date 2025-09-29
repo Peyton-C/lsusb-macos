@@ -5,6 +5,7 @@ import sys
 import plistlib
 from pathlib import Path
 import os
+import argparse
 
 VERBOSE = False
 DEBUG = False
@@ -12,16 +13,36 @@ DEBUG_TYPE = None
 filt_vid = None
 filt_pid = None
 
-if platform.system() == "Darwin":
-    mv_unclean = platform.mac_ver()[0]
-    mv_unclean = mv_unclean.split(".")
-    if mv_unclean[0] == "10" and int(mv_unclean[1]) < 10:
-        macos_version = float((f"{mv_unclean[0]}.0{mv_unclean[1]}"))
+def clean_macos_version(raw):
+    raw = raw.split(".")
+    if raw[0] == "10" and int(raw[1]) < 10:
+        macos_version = float((f"{raw[0]}.0{raw[1]}"))
     else:
-        macos_version = float((f"{mv_unclean[0]}.{mv_unclean[1]}"))
+        macos_version = float((f"{raw[0]}.{raw[1]}"))
     
-else:
-    sys.exit("This script is only supported on macOS") 
+    return macos_version
+
+def arguments():
+    global DEBUG, DEBUG_FILE, DEBUG_FILE, DEBUG_TYPE, macos_version, filt_pid, filt_vid, VERBOSE
+    parser = argparse.ArgumentParser(
+        prog="lsusb-macos",
+        description="Display connected USB and Thunderbolt Devices on macOS / Mac OS X"
+    )
+
+    parser.add_argument("-v", "--verbose", help="Output the raw information from system_profiler")
+    parser.add_argument("-d", nargs=1, metavar=("Vendor:Product"), help="Show only devices with the specified vendor and product ID numbers (in Hexadecimal) ")
+    parser.add_argument("-D", "--debug", nargs=3, metavar=("Type", "File", "OS Version"), help="Simulate Connected Devices, Type (USB|TB), File (JSON or XML) and OS version")
+
+    args = parser.parse_args()
+
+    if args.verbose:
+        VERBOSE == True
+    if args.debug:
+        DEBUG = True
+        DEBUG_TYPE, DEBUG_FILE, mv_unclean = args.debug
+        macos_version = clean_macos_version(mv_unclean)
+    if args.d:
+        filt_vid, filt_pid = args.d.split(":")
 
 def clean_hex(h):
     if h in (None, "-"):
@@ -268,34 +289,11 @@ def SPThunderboltDataType(FORMAT): # Yosemite and newer
 
     return lines
 
-# Command Line Arguments
-if len(sys.argv) > 1:
-    if sys.argv[1] == "-v" or sys.argv[1] == "--verbose":
-        VERBOSE = True
-    elif sys.argv[1] == "-d":
-        filt_vid, filt_pid = sys.argv[2].split(":")
-    
-    # -D USB /exaple/example.json 26.0
-    # Lets you test with a pre-saved json file
-    elif sys.argv[1] == "-D" or sys.argv[1] == "--debug":
-        DEBUG = True
-
-        # Allows for testing either USB or TB
-        if len(sys.argv) > 2:
-            if sys.argv[2] == "USB" or sys.argv[2] == "usb":
-                DEBUG_TYPE = "USB"
-            else:
-                DEBUG_TYPE = "TB"
-        
-        # system_profiler json output
-        if len(sys.argv) > 3:
-            DEBUG_FILE = sys.argv[3]
-        else:
-            sys.exit("Missing JSON file!")
-        
-        # lets you test both USB handelers regardless of OS version
-        if len(sys.argv) > 4:
-            macos_version = float(sys.argv[4])
+if platform.system() == "Darwin":
+    macos_version = clean_macos_version(platform.mac_ver()[0])
+    arguments()
+else:
+    sys.exit("This script is only supported on macOS") 
 
 if VERBOSE == False:
     if macos_version >= 26.0:
