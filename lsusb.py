@@ -96,19 +96,48 @@ def filter_vid_pid(filt_vid, vid, filt_pid, pid):
         else:
             return False
 
-def SPUSBHostDataType(): # Tahoe and Newer USB
+def get_json(VERSION):
+    command = {
+        1: ["SPUSBDataType", "-xml"],
+        2: ["SPUSBDataType", "-xml"],
+        3: ["SPUSBDataType", "-json"],
+        4: ["SPUSBHostDataType", "-json"]
+    }
+
     if DEBUG == True and DEBUG_TYPE == "USB":
-        f = open(DEBUG_FILE)
+        if VERSION >= 3:
+            f = open(DEBUG_FILE)
+        elif VERSION <= 2:
+            plist_to_json(DEBUG_FILE)
+            f = open("/tmp/lsusb.json")
         data = json.load(f)
     else:
         result = subprocess.run(
-            ["system_profiler", "SPUSBHostDataType", "-json"],
+            ["system_profiler", command[VERSION][0], command[VERSION][1]],
             capture_output=True,
             text=True,
             check=True,
         )
-        data = json.loads(result.stdout)
+        if VERSION >= 3:
+            data = json.loads(result.stdout)
+        elif VERSION <= 2:
+            if os.path.exists("/tmp/lsusb.plist"):
+                os.remove("/tmp/lsusb.plist")
+            if os.path.exists("/tmp/lsusb.json"):
+                os.remove("/tmp/lsusb.json")
 
+            with open("/tmp/lsusb.plist", "w", encoding="utf-8") as f:
+                f.write(result.stdout)
+
+            plist_to_json("/tmp/lsusb.plist")
+
+            f = open("/tmp/lsusb.json")
+            data = json.load(f)
+    
+    return data
+
+def SPUSBHostDataType(): # Tahoe and Newer USB
+    data = get_json(4)
     lines = []
     def process_devices(items, depth=0):
         for dev in items or []:
@@ -126,45 +155,9 @@ def SPUSBHostDataType(): # Tahoe and Newer USB
     return lines
 
 def SPUSBDataType(VERSION): # Yosemite - Sequoia USB
-    # Catalina - Sequoia
-    if VERSION == 3:
-        if DEBUG == True and DEBUG_TYPE == "USB":
-            f = open(DEBUG_FILE)
-            data = json.load(f)
-        else:
-            result = subprocess.run(
-                ["system_profiler", "SPUSBDataType", "-json"],
-                capture_output=True,
-                text=True,
-                check=True,
-            )
-            data = json.loads(result.stdout)
-    # Yosemite - Mojave
-    else:
-        if os.path.exists("/tmp/lsusb.plist"):
-            os.remove("/tmp/lsusb.plist")
-        if os.path.exists("/tmp/lsusb.json"):
-            os.remove("/tmp/lsusb.json")
-            
-        if DEBUG == True and DEBUG_TYPE == "USB":
-            plist_to_json(DEBUG_FILE)
-        else:
-            result = subprocess.run(
-                ["system_profiler", "SPUSBDataType", "-xml"],
-                capture_output=True,
-                text=True,
-                check=True,
-            )
-
-            with open("/tmp/lsusb.plist", "w", encoding="utf-8") as f:
-                f.write(result.stdout)
-
-            plist_to_json("/tmp/lsusb.plist")
-
-        f = open("/tmp/lsusb.json")
-        data = json.load(f)
-
+    data = get_json(VERSION)
     lines = []
+
     def process_devices(items, depth=0):
         for dev in items or []:
             l_id, vid, pid, mfr, name = extract_features(dev, "location_id", "vendor_id", "product_id", "manufacturer", "_name", VERSION)
@@ -187,30 +180,9 @@ def SPUSBDataType(VERSION): # Yosemite - Sequoia USB
     return lines
 
 def SPUSBDataType_legacy(): # Snow Leopard - Mavericks
-    if os.path.exists("/tmp/lsusb.plist"):
-        os.remove("/tmp/lsusb.plist")
-    if os.path.exists("/tmp/lsusb.json"):
-        os.remove("/tmp/lsusb.json")
-
-    if DEBUG == True and DEBUG_TYPE == "USB":
-        plist_to_json(DEBUG_FILE)
-    else:
-        result = subprocess.run(
-            ["system_profiler", "SPUSBDataType", "-xml"],
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-
-        with open("/tmp/lsusb.plist", "w", encoding="utf-8") as f:
-            f.write(result.stdout)
-
-        plist_to_json("/tmp/lsusb.plist")
-
-    f = open("/tmp/lsusb.json")
-    data = json.load(f)
-
+    data = get_json(1)
     lines = []
+
     def process_devices(items, depth=0):
         for dev in items or []:
             l_id, vid, pid, mfr, name = extract_features(dev, "g_location_id", "b_vendor_id", "a_product_id", "f_manufacturer", "_name", 1)
@@ -330,8 +302,8 @@ if VERBOSE == False:
         usb = SPUSBHostDataType() # Tahoe and Newer
         tb = SPThunderboltDataType("JSON")
     elif macos_version >= 10.15 and macos_version < 26.0:
-        usb = SPUSBDataType("JSON") # Catalina - Sequoia
-        tb = SPThunderboltDataType(3)
+        usb = SPUSBDataType(3) # Catalina - Sequoia
+        tb = SPThunderboltDataType("JSON")
     elif macos_version >= 10.10 and macos_version < 10.15:
         usb = SPUSBDataType(2) # Yosemite - Mojave
         tb = []
