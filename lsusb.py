@@ -84,9 +84,15 @@ def plist_to_json(path) -> None:
 
 def extract_features(dev, location_id, VID, PID, MFR, NAME, VERSION):
     # The only parts that are 100% consistent among versions
-    l_id = clean_hex(dev.get(location_id)) or "-"
     name = dev.get(NAME) or "-"
     pid = clean_hex(dev.get(PID)) or "-"
+
+    if location_id != None:
+        l_id = clean_hex(dev.get(location_id)) or "-"
+        if VERSION != 4:
+            l_id = l_id.split(" / ")[0]
+    else:
+        l_id = None
 
     # 4 - Tahoe and Newer
     # 3 - Catalina - Sequoia
@@ -108,9 +114,6 @@ def extract_features(dev, location_id, VID, PID, MFR, NAME, VERSION):
             vid = "05ac" # Pretty sure this is apple's VID
             # Apple doesnt add on the company name to the VID so we get it from the feild thats usally less detailed, execpt for themselves
             mfr = dev.get("manufacturer") or "-"
-    
-    if VERSION != 4:
-        l_id = l_id.split(" / ")[0]
 
     # Collapse whitespace in name/manufacturer so it's clean on one line
     mfr = " ".join(str(mfr).split())
@@ -127,19 +130,32 @@ def filter_vid_pid(filt_vid, vid, filt_pid, pid):
         else:
             return False
 
-def get_json(VERSION):
-    command = {
+def get_json(VERSION, TYPE):
+    command_usb = {
         1: ["SPUSBDataType", "-xml"],
         2: ["SPUSBDataType", "-xml"],
         3: ["SPUSBDataType", "-json"],
         4: ["SPUSBHostDataType", "-json"]
     }
-    
-    if DEBUG_TYPE[0] == True:
+    command_tb = {
+        1: ["SPThunderboltDataType", "-xml"],
+        2: ["SPThunderboltDataType", "-xml"],
+        3: ["SPThunderboltDataType", "-json"],
+        4: ["SPThunderboltDataType", "-json"]
+    }
+
+    if TYPE == "USB":
+        command = command_usb
+        DEBUG_INDEX = 0
+    else:
+        command = command_tb
+        DEBUG_INDEX = 1
+
+    if DEBUG_TYPE[DEBUG_INDEX] == True:
         if VERSION >= 3:
-            f = open(DEBUG_FILE[0])
+            f = open(DEBUG_FILE[DEBUG_INDEX])
         elif VERSION <= 2:
-            plist_to_json(DEBUG_FILE[0])
+            plist_to_json(DEBUG_FILE[DEBUG_INDEX])
             f = open("/tmp/lsusb.json")
         data = json.load(f)
     else:
@@ -168,7 +184,7 @@ def get_json(VERSION):
     return data
 
 def SPUSBHostDataType(): # Tahoe and Newer USB
-    data = get_json(4)
+    data = get_json(4, "USB")
     lines = []
     def process_devices(items, depth=0):
         for dev in items or []:
@@ -186,7 +202,7 @@ def SPUSBHostDataType(): # Tahoe and Newer USB
     return lines
 
 def SPUSBDataType(VERSION): # Yosemite - Sequoia USB
-    data = get_json(VERSION)
+    data = get_json(VERSION, "USB")
     lines = []
 
     def process_devices(items, depth=0):
@@ -211,7 +227,7 @@ def SPUSBDataType(VERSION): # Yosemite - Sequoia USB
     return lines
 
 def SPUSBDataType_legacy(): # Snow Leopard - Mavericks
-    data = get_json(1)
+    data = get_json(1, "USB")
     lines = []
 
     def process_devices(items, depth=0):
@@ -231,56 +247,14 @@ def SPUSBDataType_legacy(): # Snow Leopard - Mavericks
 
     return lines
 
-def SPThunderboltDataType(FORMAT): # Yosemite and newer
-    if FORMAT == "JSON":
-        if DEBUG_TYPE[1] == True:
-            f = open(DEBUG_FILE[1])
-            data = json.load(f)
-        else:
-            result = subprocess.run(
-                ["system_profiler", "SPThunderboltDataType", "-json"],
-                capture_output=True,
-                text=True,
-                check=True,
-            )
-            data = json.loads(result.stdout)
-    else:
-        if DEBUG_TYPE[1] == True:
-            plist_to_json(DEBUG_FILE[1])
-        else:
-            if os.path.exists("/tmp/lsusb.plist"):
-                os.remove("/tmp/lsusb.plist")
-            if os.path.exists("/tmp/lsusb.json"):
-                os.remove("/tmp/lsusb.json")
-
-            result = subprocess.run(
-                ["system_profiler", "SPThunderboltDataType", "-xml"],
-                capture_output=True,
-                text=True,
-                check=True,
-            )
-
-            with open("/tmp/lsusb.plist", "w", encoding="utf-8") as f:
-                f.write(result.stdout)
-
-            plist_to_json("/tmp/lsusb.plist")
-
-        f = open("/tmp/lsusb.json")
-        data = json.load(f)
-        
+def SPThunderboltDataType(VERSION): # Yosemite and newer
+    data = get_json(VERSION, "TB")
     lines = []
 
     def process_devices(items, depth=0):
         for dev in items or []:
             # Note: These arent a direct eqivilant to normal USB VID and PIDs
-            vid = clean_hex(dev.get("vendor_id_key") or "-")
-            pid = clean_hex(dev.get("device_id_key") or "-")
-            mfr = dev.get("vendor_name_key") or "-"
-            name = dev.get("_name") or "-"
-
-            # Collapse whitespace in name/manufacturer so it's clean on one line
-            mfr = " ".join(str(mfr).split())
-            name = " ".join(str(name).split())
+            l_id, vid, pid, mfr, name = extract_features(dev, None, "vendor_id_key", "device_id_key", "vendor_name_key", "_name", 4)
 
             if filter_vid_pid(filt_vid, vid, filt_pid, pid) == True:
                 lines.append(f"ID {vid}:{pid} {mfr} {name}")
@@ -290,10 +264,11 @@ def SPThunderboltDataType(FORMAT): # Yosemite and newer
             if isinstance(child_items, list) and child_items:
                 process_devices(child_items, depth + 1)
     
-    if FORMAT == "JSON":
+    if VERSION >= 3:
         hubs = data.get("SPThunderboltDataType", [])
     else:
         hubs = data[0].get("_items", []) or []
+
     for top in hubs:
         process_devices(top.get("_items", []), depth=0)
 
@@ -308,17 +283,18 @@ else:
 if VERBOSE == False:
     if macos_version >= 26.0:
         usb = SPUSBHostDataType() # Tahoe and Newer
-        tb = SPThunderboltDataType("JSON")
+        tb = SPThunderboltDataType(4)
     elif macos_version >= 10.15 and macos_version < 26.0:
         usb = SPUSBDataType(3) # Catalina - Sequoia
-        tb = SPThunderboltDataType("JSON")
+        tb = SPThunderboltDataType(3)
     elif macos_version >= 10.10 and macos_version < 10.15:
         usb = SPUSBDataType(2) # Yosemite - Mojave
         tb = []
-        #tb = SPThunderboltDataType("XML")
+        #tb = SPThunderboltDataType(2)
     else:
         usb = SPUSBDataType_legacy()
         tb = []
+        #tb = SPThunderboltDataType(1)
 
     if usb != []:
         print("USB Devies:")
