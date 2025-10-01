@@ -272,10 +272,11 @@ else:
     print(result.stdout)
 
     # Thunderbolt
-    result = subprocess.run(
-        ["system_profiler", TB_DATA_PROPERTIES["ARG1"][VERSION - 1]],
-        capture_output=True,
-        text=True,
-        check=True,
-    )
-    print(result.stdout)
+    if VERSION > 2:
+        result = subprocess.run(
+            ["system_profiler", TB_DATA_PROPERTIES["ARG1"][VERSION - 1]],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        print(result.stdout)
