@@ -13,6 +13,7 @@ USB_DATA_PROPERTIES = {
     "ARG1":  ["SPUSBDataType",   "SPUSBDataType", "SPUSBDataType", "SPUSBHostDataType"],
     "ARG2":  ["-xml",            "-xml",          "-json",         "-json"],
     "LID":   ["g_location_id",   "location_id",   "location_id",   "USBKeyLocationID"],
+    "RLID":  ["usb_bus_number",  "location_id",   "location_id",   "USBKeyLocationID"],
     "VID":   ["b_vendor_id",     "vendor_id",     "vendor_id",     "USBDeviceKeyVendorID"],
     "PID":   ["a_product_id",    "product_id",    "product_id",    "USBDeviceKeyProductID"],
     "MFR":   ["f_manufacturer",  "manufacturer",  "manufacturer",  "USBDeviceKeyVendorName"],
@@ -26,6 +27,7 @@ TB_DATA_PROPERTIES = {
     "ARG1":  [None, None,    "SPThunderboltDataType", "SPThunderboltDataType"],
     "ARG2":  [None, None,    "-json",                 "-json"],
     "LID":   [None, None,    None,                    None], # This is kinda still a janky workaround becasue i want to share as much as i can between USB and TB as i can but i dont wanna make it overly complex either
+    "RLID":  [None, None,    None,                    None],
     "VID":   [None, None,    "vendor_id_key",         "vendor_id_key"],
     "PID":   [None, None,    "device_id_key",         "device_id_key"],
     "MFR":   [None, None,    "vendor_name_key",       "vendor_name_key"],
@@ -35,8 +37,8 @@ TB_DATA_PROPERTIES = {
 }
 
 SPEED_INDEX = {
-    "1.5 Mb/s":          "USB 1.0 - 1.5 Mb/s",
-    "12 Mb/s":           "USB 1.1 - 12 Mb/s",
+    "1.5 Mb/s":          "USB 1.1 LS - 1.5 Mb/s",
+    "12 Mb/s":           "USB 1.1 HS - 12 Mb/s",
     "high_speed":        "USB 2.0 - 480 Mb/s",
     "480 Mb/s":          "USB 2.0 - 480 Mb/s",
     "super_speed":       "USB 3.0 - 5 Gb/s",
@@ -48,6 +50,20 @@ SPEED_INDEX = {
     "thunderbolt_three": "Thunderbolt 3 - 40 Gb/s",
     "thunderbolt_four":  "Thunderbolt 4 - 40 Gb/s",
     "thunderbolt_five":  "Thunderbolt 5 - 120 Gb/s"
+}
+
+ROOT_HUB_OVERRIDE = {
+    # _name output               MFR           Speed         Fancy Name                 VID     PID
+    "Generic":                   ["Generic",    "Unknown",   "Unknown Bus",             "05ac", "0000"],
+    "USBBus":                    ["Apple Inc.", "12 Mb/s",   "USB 1.1 Bus",             "05ac", "0000"],
+    "USB20Bus":                  ["Apple Inc.", "480 Mb/s",  "USB 2.0 Bus",             "05ac", "0000"],
+    "USB30Bus":                  ["Apple Inc.", "5 Gb/s",    "USB 3.0 Bus",             "05ac", "0000"],
+    "USB 3.1 Bus":               ["Apple Inc.", "10 Gb/s",   "USB 3.1 Bus",             "05ac", "0000"],
+    "thunderbolt_bus":           ["Apple Inc.", "?? Gb/s",   "Thunderbolt 1 / 2 Bus",   "0001", "0000"],
+    "thunderboltusb4_bus_":      ["Apple Inc.", "40 Gb/s",   "Thunderbolt / USB 4 Bus", "0001", "0000"],
+    "OHCI Root Hub Simulation":  ["Apple Inc.", "12 Mb/s",   "Virtual USB 1.1 Bus",     "05ac", "8005"],
+    "EHCI Root Hub Simulation":  ["Apple Inc.", "480 Mb/s",  "Virtual USB 2.0 Bus",     "05ac", "8006"],
+    "XHCI Root Hub Simulation":  ["Apple Inc.", "5 Gb/s",    "Virtual USB 3.0 Bus",     "05ac", "8007"]
 }
 
 def clean_macos_version(raw):
@@ -131,6 +147,34 @@ def plist_to_json(path) -> None:
 
     with open("/tmp/lsusb.json", "w", encoding="utf-8") as out:
         json.dump(data, out, ensure_ascii=False, indent=2, sort_keys=True, default=default)
+
+def get_root_hubs(source, DATA_PROPERTIES, VERSION):
+    # macOS gives us basically nothing about root hubs so we kinda just get what we can and hardcode everything else LMAO
+    base_name = source.get(DATA_PROPERTIES["NAME"][VERSION - 1], [])
+    if DATA_PROPERTIES["RLID"][VERSION - 1] != None:
+        if VERSION == 4:
+            l_id = clean_hex(source.get(DATA_PROPERTIES["RLID"][VERSION - 1])) or "-"
+            if VERSION != 4:
+                l_id = l_id.split(" / ")[0]
+        elif VERSION == 1:
+            l_id = clean_hex(source.get(DATA_PROPERTIES["RLID"][VERSION - 1])) or "-"
+            l_id = l_id.split(" / ")[0]
+            l_id = l_id + "0000"
+        else:
+            l_id = "00000000" # it doesnt look like apple even gives us the location ID for root hubs on Yosemite - Sequoia
+    else:
+        l_id = None
+
+    try:
+        if "thunderboltusb4_bus_" in base_name:
+            mfr, speed, name, vid, pid = ROOT_HUB_OVERRIDE["thunderboltusb4_bus_"]
+        else:
+            mfr, speed, name, vid, pid = ROOT_HUB_OVERRIDE[base_name]
+    except:
+        mfr, speed, name, vid, pid = ROOT_HUB_OVERRIDE["Generic"]
+        pass
+
+    return name, l_id, mfr, vid, pid, speed
 
 def extract_features(dev, location_id, VID, PID, MFR, NAME, SPEED, VERSION):
     # The only parts that are 100% consistent among versions
@@ -253,6 +297,15 @@ def SPDataType(VERSION, TYPE):
         source = data[0]
     
     for top in source.get(DATA_PROPERTIES["HEAD"][VERSION - 1], []):
+        name, l_id, mfr, vid, pid, speed = get_root_hubs(top, DATA_PROPERTIES, VERSION)
+        if l_id != None:
+            lines.append(f"Location: {l_id}: ID {vid}:{pid} {mfr} {name}")
+        else:
+            lines.append(f"ID {vid}:{pid} {mfr} {name}")
+        
+        if speed != None and SHOW_SPEED == True:
+            lines.append(f"     Speed: {speed}")
+        
         process_devices(top.get("_items", []), depth=0)
     
     return lines
@@ -288,10 +341,10 @@ if VERBOSE == False:
         print("No Devices Connected / Detected!")
     
     # Cleanup temp files
-    if os.path.exists("/tmp/lsusb.plist"):
-        os.remove("/tmp/lsusb.plist")
-    if os.path.exists("/tmp/lsusb.json"):
-        os.remove("/tmp/lsusb.json")
+    #if os.path.exists("/tmp/lsusb.plist"):
+    #    os.remove("/tmp/lsusb.plist")
+    #if os.path.exists("/tmp/lsusb.json"):
+    #    os.remove("/tmp/lsusb.json")
 else:
     result = subprocess.run(
             ["system_profiler", USB_DATA_PROPERTIES["ARG1"][VERSION - 1]],
