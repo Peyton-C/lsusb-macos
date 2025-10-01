@@ -35,21 +35,26 @@ def clean_macos_version(raw):
     parts = raw.split(".")
     major = int(parts[0])
     minor = int(parts[1])
-    ver = major * 100 + minor
+    if len(parts) > 2:
+        patch = (int(parts[2]))
+    else:
+        patch = 0
     
-    if ver >= 2601:
+    ver = (major * 10000) + (minor * 100) + (patch)
+    
+    if ver >= 260000:
         VERSION = 4
-    elif 1015 <= ver <= 2600:
+    elif 101500 <= ver <= 260000:
         VERSION = 3
-    elif 1010 <= ver <= 1014:
+    elif 101000 <= ver <= 101400:
         VERSION = 2
     else:
         VERSION = 1
     
-    return VERSION
+    return VERSION, ver
 
 def arguments():
-    global DEBUG_FILE, DEBUG_TYPE, VERSION, filt_pid, filt_vid, VERBOSE
+    global DEBUG_FILE, DEBUG_TYPE, VERSION, filt_pid, filt_vid, VERBOSE, macos_version
     parser = argparse.ArgumentParser(
         prog="lsusb-macos",
         description="Display connected USB and Thunderbolt Devices on macOS / Mac OS X"
@@ -75,7 +80,7 @@ def arguments():
                 DEBUG_TYPE[1] = True
                 DEBUG_FILE[1] = f
         
-        VERSION = clean_macos_version(args.osver)
+        VERSION, macos_version = clean_macos_version(args.osver)
 
     if args.d:
         filt_vid, filt_pid = args.d.split(":")
@@ -218,17 +223,22 @@ def SPDataType(VERSION, TYPE):
     return lines
 
 if platform.system() == "Darwin":
-    VERSION = clean_macos_version(platform.mac_ver()[0])
+    VERSION, macos_version = clean_macos_version(platform.mac_ver()[0])
     arguments()
 else:
     sys.exit("This script is only supported on macOS") 
 
 if VERBOSE == False:
     usb = SPDataType(VERSION, "USB")
+    # Temporary fix because i dont have any testing for TB on VERSION 1 or 2
     if VERSION > 2:
         tb = SPDataType(VERSION, "TB")
     else:
         tb = []
+    
+    # 10.6.5 is the first version with Thunderbolt support
+    # if macos_version > 100604:
+    #     tb = SPDataType(VERSION, "TB")
 
     if usb != []:
         print("USB Devies:")
