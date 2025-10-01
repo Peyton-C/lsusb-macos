@@ -1,11 +1,5 @@
-import json
-import subprocess
-import platform
-import sys
-import plistlib
+import json, plistlib, platform, os, sys, subprocess, argparse
 from pathlib import Path
-import os
-import argparse
 
 VERBOSE = False
 DEBUG_TYPE = [False, False]
@@ -38,27 +32,24 @@ TB_DATA_PROPERTIES = {
 }
 
 def clean_macos_version(raw):
-    global VERSION
-    raw = raw.split(".")
-    if raw[0] == "10" and int(raw[1]) < 10:
-        macos_version = float((f"{raw[0]}.0{raw[1]}"))
-    else:
-        macos_version = float((f"{raw[0]}.{raw[1]}"))
+    parts = raw.split(".")
+    major = int(parts[0])
+    minor = int(parts[1])
+    ver = major * 100 + minor
     
-    # A switch statement would work better here but that would mean dropping 10.6-10.8 support
-    if macos_version >= 26.0:
+    if ver >= 2601:
         VERSION = 4
-    elif macos_version >= 10.15 and macos_version < 26.0:
+    elif 1015 <= ver <= 2600:
         VERSION = 3
-    elif macos_version >= 10.10 and macos_version < 10.15:
+    elif 1010 <= ver <= 1014:
         VERSION = 2
     else:
         VERSION = 1
     
-    return macos_version
+    return VERSION
 
 def arguments():
-    global DEBUG_FILE, DEBUG_TYPE, macos_version, filt_pid, filt_vid, VERBOSE
+    global DEBUG_FILE, DEBUG_TYPE, VERSION, filt_pid, filt_vid, VERBOSE
     parser = argparse.ArgumentParser(
         prog="lsusb-macos",
         description="Display connected USB and Thunderbolt Devices on macOS / Mac OS X"
@@ -80,11 +71,11 @@ def arguments():
             if t == "USB":
                 DEBUG_TYPE[0] = True
                 DEBUG_FILE[0] = f
-            elif t == "TB":
+            if t == "TB":
                 DEBUG_TYPE[1] = True
                 DEBUG_FILE[1] = f
         
-        macos_version = clean_macos_version(args.osver)
+        VERSION = clean_macos_version(args.osver)
 
     if args.d:
         filt_vid, filt_pid = args.d.split(":")
@@ -110,7 +101,6 @@ def plist_to_json(path) -> None:
             import base64
             return {"__type__": "bytes", "base64": base64.b64encode(o).decode("ascii")}
         if hasattr(o, "isoformat"):
-            # e.g., datetime.datetime from plist "Date" type
             return o.isoformat()
         raise TypeError(f"Object of type {type(o).__name__} is not JSON serializable")
 
@@ -129,10 +119,6 @@ def extract_features(dev, location_id, VID, PID, MFR, NAME, VERSION):
     else:
         l_id = None
 
-    # 4 - Tahoe and Newer
-    # 3 - Catalina - Sequoia
-    # 2 - Yosmite - Mojave
-    # 1 - Mavricks and Older
     if VERSION != 3 or VERSION == 3 and l_id == None:
         mfr = dev.get(MFR[VERSION - 1]) or "-"
         vid = clean_hex(dev.get(VID[VERSION - 1]) or "-")
@@ -190,11 +176,6 @@ def get_json(VERSION, TYPE):
         if VERSION >= 3:
             data = json.loads(result.stdout)
         elif VERSION <= 2:
-            if os.path.exists("/tmp/lsusb.plist"):
-                os.remove("/tmp/lsusb.plist")
-            if os.path.exists("/tmp/lsusb.json"):
-                os.remove("/tmp/lsusb.json")
-
             with open("/tmp/lsusb.plist", "w", encoding="utf-8") as f:
                 f.write(result.stdout)
 
@@ -237,16 +218,14 @@ def SPDataType(VERSION, TYPE):
     return lines
 
 if platform.system() == "Darwin":
-    macos_version = clean_macos_version(platform.mac_ver()[0])
+    VERSION = clean_macos_version(platform.mac_ver()[0])
     arguments()
 else:
     sys.exit("This script is only supported on macOS") 
 
 if VERBOSE == False:
-    #usb = SPUSBMerged(VERSION)
     usb = SPDataType(VERSION, "USB")
     if VERSION > 2:
-        #tb = SPThunderboltDataType(VERSION)
         tb = SPDataType(VERSION, "TB")
     else:
         tb = []
@@ -262,6 +241,12 @@ if VERBOSE == False:
 
     if usb == [] and tb == []:
         print("No Devices Connected / Detected!")
+    
+    # Cleanup temp files
+    if os.path.exists("/tmp/lsusb.plist"):
+        os.remove("/tmp/lsusb.plist")
+    if os.path.exists("/tmp/lsusb.json"):
+        os.remove("/tmp/lsusb.json")
 else:
     result = subprocess.run(
             ["system_profiler", USB_DATA_PROPERTIES["ARG1"][VERSION - 1]],
