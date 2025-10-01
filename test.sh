@@ -1,18 +1,20 @@
 #!/bin/bash
 # Automatically try every supported combination
 
+EXTRA_ARGS=""
+
 # Tahoe and Newer
 printf "Tahoe\n"
-python3 ./lsusb.py -D USB ./json_examples/tahoe_usb_full.json -D TB ./json_examples/tahoe_tb.json -os 26.1
+python3 ./lsusb.py -D USB ./json_examples/tahoe_usb_full.json -D TB ./json_examples/tahoe_tb.json -os 26.1 $EXTRA_ARGS
 
 # Sequoia - Catalina
 printf "\n\nSequoia\n"
-python3 ./lsusb.py -D USB ./json_examples/sequoia_intel_usb_full.json -D TB ./json_examples/sequoia_intel_tb.json -os  15.5
+python3 ./lsusb.py -D USB ./json_examples/sequoia_intel_usb_full.json -D TB ./json_examples/sequoia_intel_tb.json -os  15.5 $EXTRA_ARGS
 
 # Mojave - Yosemite
 printf "\n\nMojave\n" 
-python3 ./lsusb.py -D USB ./json_examples/hs_xml_usb_basic.plist -os  10.13 
+python3 ./lsusb.py -D USB ./json_examples/hs_xml_usb_basic.plist -os 10.13 $EXTRA_ARGS
 
 # Mavricks and Older
 printf "\n\nMavricks\n"
-python3 ./lsusb.py -D USB ./json_examples/lion_xml_usb_basic.plist -os 10.7
+python3 ./lsusb.py -D USB ./json_examples/lion_xml_usb_basic.plist -os 10.7 $EXTRA_ARGS
