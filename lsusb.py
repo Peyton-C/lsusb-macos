@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import json, plistlib, platform, os, sys, subprocess, argparse
 from pathlib import Path
 
@@ -177,14 +179,14 @@ def get_root_hubs(dev, DATA_PROPERTIES, VERSION):
 
     return name, l_id, mfr, vid, pid, speed
 
-def extract_features(dev, location_id, VID, PID, MFR, NAME, SPEED, VERSION):
+def extract_features(dev, DATA_PROPERTIES, VERSION):
     # The only parts that are 100% consistent among versions
-    name = dev.get(NAME[VERSION - 1]) or "-"
-    pid = clean_hex(dev.get(PID[VERSION - 1])) or "-"
-    raw_speed = dev.get(SPEED[VERSION - 1]) or "-"
+    name = dev.get(DATA_PROPERTIES["NAME"][VERSION - 1]) or "-"
+    pid = clean_hex(dev.get(DATA_PROPERTIES["PID"][VERSION - 1])) or "-"
+    raw_speed = dev.get(DATA_PROPERTIES["SPEED"][VERSION - 1]) or "-"
 
-    if location_id[VERSION - 1] != None:
-        l_id = clean_hex(dev.get(location_id[VERSION - 1])) or "-"
+    if DATA_PROPERTIES["LID"][VERSION - 1] != None:
+        l_id = clean_hex(dev.get(DATA_PROPERTIES["LID"][VERSION - 1])) or "-"
         if VERSION != 4:
             l_id = l_id.split(" / ")[0]
     else:
@@ -198,9 +200,9 @@ def extract_features(dev, location_id, VID, PID, MFR, NAME, SPEED, VERSION):
     
     # it seems like in V2 apple sometimes includes the manufacturer in the VID but not always so the previous patch for V3 wont work
     # V2 and V3 are so messy compared to V1 and V4, it is actually insane how many patches i have to make for each of them
-    if len(dev.get(VID[VERSION - 1])) > 6 or (VERSION == 3 and l_id != None):
+    if len(dev.get(DATA_PROPERTIES["VID"][VERSION - 1])) > 6 or (VERSION == 3 and l_id != None):
         # VID includes both the manufacturer and the VID for some reason
-        vid = dev.get(VID[VERSION - 1]) or "-"
+        vid = dev.get(DATA_PROPERTIES["VID"][VERSION - 1]) or "-"
 
         # V3: Apple is actually fucking insane, instead of you know, putting down their actual USB VID they just supply "apple_vendor_id"
         if vid != "apple_vendor_id":
@@ -210,10 +212,10 @@ def extract_features(dev, location_id, VID, PID, MFR, NAME, SPEED, VERSION):
         else:
             vid = "05ac" # Pretty sure this is apple's VID
             # Apple doesnt add on the company name to the VID so we get it from the feild thats usally less detailed, execpt for themselves
-            mfr = dev.get(MFR[VERSION - 1]) or "-"
+            mfr = dev.get(DATA_PROPERTIES["MFR"][VERSION - 1]) or "-"
     elif VERSION != 3 or (VERSION == 3 and l_id == None):
-        mfr = dev.get(MFR[VERSION - 1]) or "-"
-        vid = clean_hex(dev.get(VID[VERSION - 1]) or "-")
+        mfr = dev.get(DATA_PROPERTIES["MFR"][VERSION - 1]) or "-"
+        vid = clean_hex(dev.get(DATA_PROPERTIES["VID"][VERSION - 1]) or "-")
         
     
     # Broadcomm Bluetooth Controller workaround (MacbookPro12,1 + Others)
@@ -281,7 +283,7 @@ def SPDataType(VERSION, TYPE):
 
     def process_devices(items, depth=0):
         for dev in items or []:
-            l_id, vid, pid, mfr, name, speed = extract_features(dev, DATA_PROPERTIES["LID"], DATA_PROPERTIES["VID"], DATA_PROPERTIES["PID"], DATA_PROPERTIES["MFR"], DATA_PROPERTIES["NAME"], DATA_PROPERTIES["SPEED"], VERSION)
+            l_id, vid, pid, mfr, name, speed = extract_features(dev, DATA_PROPERTIES, VERSION)
             if filter_vid_pid(filt_vid, vid, filt_pid, pid) == True:
                 if l_id != None:
                     lines.append(f"Location: {l_id}: ID {vid}:{pid} {mfr} {name}")
@@ -314,6 +316,9 @@ def SPDataType(VERSION, TYPE):
     
     return lines
 
+if sys.version_info[0] < 3:
+    sys.exit('This script requires Python 3')
+
 if platform.system() == "Darwin":
     VERSION, macos_version = clean_macos_version(platform.mac_ver()[0])
     arguments()
@@ -345,10 +350,10 @@ if VERBOSE == False:
         print("No Devices Connected / Detected!")
     
     # Cleanup temp files
-    #if os.path.exists("/tmp/lsusb.plist"):
-    #    os.remove("/tmp/lsusb.plist")
-    #if os.path.exists("/tmp/lsusb.json"):
-    #    os.remove("/tmp/lsusb.json")
+    if os.path.exists("/tmp/lsusb.plist"):
+       os.remove("/tmp/lsusb.plist")
+    if os.path.exists("/tmp/lsusb.json"):
+       os.remove("/tmp/lsusb.json")
 else:
     result = subprocess.run(
             ["system_profiler", USB_DATA_PROPERTIES["ARG1"][VERSION - 1]],
