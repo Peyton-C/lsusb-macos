@@ -60,5 +60,5 @@ ID 2b89:0708 Ugreen Group Limited Thunderbolt 4 Docking Station (8-in-1)
 
 ## Credit
 Thank you to the following people for their contributions:
-- [@kirb](https://github.com/kirb) - [macOS Tahoe Thunderbolt 3 Output](./json_examples/tahoe_tb_kirb.json)
+- [@kirb](https://github.com/kirb) - [macOS Tahoe Thunderbolt 3 Output](./tests/Version4/tahoe_tb_kirb.json)
 - [@jlhonora](https://github.com/jlhonora) - [Information about older macOS system_profiler outputs ](https://github.com/jlhonora/lsusb)
