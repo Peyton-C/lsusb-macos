@@ -176,82 +176,60 @@ def plist_to_json(path):
     with open("/tmp/lsusb.json", "w", encoding="utf-8") as out:
         json.dump(data, out, ensure_ascii=False, indent=2, sort_keys=True, default=default)
 
-def get_root_hubs(dev, DATA_PROPERTIES, VERSION):
-    # macOS gives us basically nothing about root hubs so we kinda just get what we can and hardcode everything else LMAO
-    base_name = dev.get(DATA_PROPERTIES["NAME"][VERSION - 1], [])
-    if DATA_PROPERTIES["RLID"][VERSION - 1] != None:
-        if VERSION == 4:
-            l_id = clean_hex(dev.get(DATA_PROPERTIES["RLID"][VERSION - 1])) or "-"
-            if VERSION != 4:
-                l_id = l_id.split(" / ")[0]
-        elif VERSION == 1:
-            l_id = clean_hex(dev.get(DATA_PROPERTIES["RLID"][VERSION - 1])) or "-"
+def extract_features(dev, DATA_PROPERTIES, VERSION, RH):
+    # The only parts that are 100% consistent among versions
+    name = dev.get(DATA_PROPERTIES["NAME"][VERSION - 1]) or "-"
+
+    if RH == False:
+        LID_TYPE = "LID"
+    else:
+        LID_TYPE = "RLID"
+    
+    if DATA_PROPERTIES[LID_TYPE][VERSION - 1] != None:
+        l_id = clean_hex(dev.get(DATA_PROPERTIES[LID_TYPE][VERSION - 1])) or "-"
+        if VERSION != 4:
+            if VERSION == 1 and RH == True:
+                l_id = l_id + "0000"
             l_id = l_id.split(" / ")[0]
-            l_id = l_id + "0000"
-        else:
+        if RH == True and (VERSION == 2 or VERSION == 3):
             l_id = "00000000" # it doesnt look like apple even gives us the location ID for root hubs on Yosemite - Sequoia
     else:
         l_id = None
+    
+    if RH == False:
+        raw_speed = dev.get(DATA_PROPERTIES["SPEED"][VERSION - 1]) or "-"
+        pid = clean_hex(dev.get(DATA_PROPERTIES["PID"][VERSION - 1])) or "-"
+        # it seems like in V2 apple sometimes includes the manufacturer in the VID but not always so the previous patch for V3 wont work
+        # V2 and V3 are so messy compared to V1 and V4, it is actually insane how many patches i have to make for each of them
+        if len(dev.get(DATA_PROPERTIES["VID"][VERSION - 1])) > 6 or (VERSION == 3 and l_id != None):
+            # VID includes both the manufacturer and the VID for some reason
+            vid = dev.get(DATA_PROPERTIES["VID"][VERSION - 1]) or "-"
 
+            # V3: Apple is actually fucking insane, instead of you know, putting down their actual USB VID they just supply "apple_vendor_id"
+            if vid != "apple_vendor_id":
+                vid, mfr = vid.split("  ") # "vendor_id" : "0x154b  (PNY Technologies Inc.)"
+                vid = clean_hex(vid)
+                mfr = mfr.strip("()")
+            else:
+                vid = "05ac" # Pretty sure this is apple's VID
+                # Apple doesnt add on the company name to the VID so we get it from the feild thats usally less detailed, execpt for themselves
+                mfr = dev.get(DATA_PROPERTIES["MFR"][VERSION - 1]) or "-"
+        elif VERSION != 3 or (VERSION == 3 and l_id == None):
+            mfr = dev.get(DATA_PROPERTIES["MFR"][VERSION - 1]) or "-"
+            vid = clean_hex(dev.get(DATA_PROPERTIES["VID"][VERSION - 1]) or "-")
+        
+        try:
+            speed = SPEED_INDEX[raw_speed]
+        except:
+            speed = None
+            pass
+        
+    # Root hubs and certain devices need to get their data manually 
     try:
-        if "thunderboltusb4_bus_" in base_name:
+        if "thunderboltusb4_bus_" in name:
             mfr, speed, name, vid, pid = DEVICE_OVERRIDE["thunderboltusb4_bus_"]
         else:
-            mfr, speed, name, vid, pid = DEVICE_OVERRIDE[base_name]
-    except:
-        mfr, speed, name, vid, pid = DEVICE_OVERRIDE["Generic"]
-        pass
-    
-    # Name, LID, VID, PID, MFR, 
-    info = [name, l_id, vid, pid, mfr]
-    # Speed, Serial
-    ext_info = [speed, None]
-
-    return info, ext_info
-
-def extract_features(dev, DATA_PROPERTIES, VERSION):
-    # The only parts that are 100% consistent among versions
-    name = dev.get(DATA_PROPERTIES["NAME"][VERSION - 1]) or "-"
-    pid = clean_hex(dev.get(DATA_PROPERTIES["PID"][VERSION - 1])) or "-"
-    raw_speed = dev.get(DATA_PROPERTIES["SPEED"][VERSION - 1]) or "-"
-
-    if DATA_PROPERTIES["LID"][VERSION - 1] != None:
-        l_id = clean_hex(dev.get(DATA_PROPERTIES["LID"][VERSION - 1])) or "-"
-        if VERSION != 4:
-            l_id = l_id.split(" / ")[0]
-    else:
-        l_id = None
-    
-    try:
-        speed = SPEED_INDEX[raw_speed]
-    except:
-        speed = None
-        pass
-    
-    # it seems like in V2 apple sometimes includes the manufacturer in the VID but not always so the previous patch for V3 wont work
-    # V2 and V3 are so messy compared to V1 and V4, it is actually insane how many patches i have to make for each of them
-    if len(dev.get(DATA_PROPERTIES["VID"][VERSION - 1])) > 6 or (VERSION == 3 and l_id != None):
-        # VID includes both the manufacturer and the VID for some reason
-        vid = dev.get(DATA_PROPERTIES["VID"][VERSION - 1]) or "-"
-
-        # V3: Apple is actually fucking insane, instead of you know, putting down their actual USB VID they just supply "apple_vendor_id"
-        if vid != "apple_vendor_id":
-            vid, mfr = vid.split("  ") # "vendor_id" : "0x154b  (PNY Technologies Inc.)"
-            vid = clean_hex(vid)
-            mfr = mfr.strip("()")
-        else:
-            vid = "05ac" # Pretty sure this is apple's VID
-            # Apple doesnt add on the company name to the VID so we get it from the feild thats usally less detailed, execpt for themselves
-            mfr = dev.get(DATA_PROPERTIES["MFR"][VERSION - 1]) or "-"
-    elif VERSION != 3 or (VERSION == 3 and l_id == None):
-        mfr = dev.get(DATA_PROPERTIES["MFR"][VERSION - 1]) or "-"
-        vid = clean_hex(dev.get(DATA_PROPERTIES["VID"][VERSION - 1]) or "-")
-        
-    
-    # Broadcomm Bluetooth Controller workaround (MacbookPro12,1 + Others)
-    # Apple wont give us the USB speeed for it so we need to hard code it
-    try:
-        speed = DEVICE_OVERRIDE[name][1]
+            mfr, speed, name, vid, pid = DEVICE_OVERRIDE[name]
     except:
         pass
 
@@ -334,7 +312,7 @@ def SPDataType(VERSION, TYPE):
             if device[1] != None:
                 lines.append(f"Location: {device[1]}: ID {device[2]}:{device[3]} {device[4]} {device[0]}")
             else:
-                lines.append(f"ID {device[1]}:{device[2]} {device[3]} {device[0]}")
+                lines.append(f"ID {device[2]}:{device[3]} {device[4]} {device[0]}")
             
             if EXTRA_INFO == True:
                 if ext[0] != None:
@@ -345,7 +323,7 @@ def SPDataType(VERSION, TYPE):
         
     def process_devices(items, depth=0):
         for dev in items or []:
-            device, ext = extract_features(dev, DATA_PROPERTIES, VERSION)
+            device, ext = extract_features(dev, DATA_PROPERTIES, VERSION, False)
             for line in output(device, ext):
                 lines.append(line)
             
@@ -359,7 +337,7 @@ def SPDataType(VERSION, TYPE):
         dev = data[0]
     
     for top in dev.get(DATA_PROPERTIES["HEAD"][VERSION - 1], []):
-        device, ext = get_root_hubs(top, DATA_PROPERTIES, VERSION)
+        device, ext = extract_features(top, DATA_PROPERTIES, VERSION, True)
         for line in output(device, ext):
             lines.append(line)
         
