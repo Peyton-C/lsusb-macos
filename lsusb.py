@@ -40,6 +40,7 @@ TB_DATA_PROPERTIES = {
 
 SPEED_INDEX = {
     "1.5 Mb/s":          "USB 1.1 LS - 1.5 Mb/s",
+    "full_speed":        "USB 1.1 HS - 12 Mb/s",
     "12 Mb/s":           "USB 1.1 HS - 12 Mb/s",
     "high_speed":        "USB 2.0 - 480 Mb/s",
     "480 Mb/s":          "USB 2.0 - 480 Mb/s",
