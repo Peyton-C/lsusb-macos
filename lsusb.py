@@ -38,36 +38,55 @@ TB_DATA_PROPERTIES = {
     "HEAD":  [None, None,    "SPThunderboltDataType", "SPThunderboltDataType"]
 }
 
-SPEED_INDEX = {
-    "1.5 Mb/s":          "USB 1.1 LS - 1.5 Mb/s",
-    "full_speed":        "USB 1.1 HS - 12 Mb/s",
-    "12 Mb/s":           "USB 1.1 HS - 12 Mb/s",
-    "high_speed":        "USB 2.0 - 480 Mb/s",
-    "480 Mb/s":          "USB 2.0 - 480 Mb/s",
-    "super_speed":       "USB 3.0 - 5 Gb/s",
-    "5 Gb/s":            "USB 3.0 - 5 Gb/s",
-    "10 Gb/s":           "USB 3.1 - 10 Gb/s",
-    "usb_four":          "USB 4.0 - 40 Gb/s",
-    "thunderbolt_one":   "Thunderbolt 1 - 10 Gb/s",
-    "thunderbolt_two":   "Thunderbolt 2 - 20 Gb/s",
-    "thunderbolt_three": "Thunderbolt 3 - 40 Gb/s",
-    "thunderbolt_four":  "Thunderbolt 4 - 40 Gb/s",
-    "thunderbolt_five":  "Thunderbolt 5 - 120 Gb/s"
+SPEED_NAME = {
+    "usb1_ls": "USB 1.1 LS - 1.5 Mb/s",
+    "usb1_fs": "USB 1.1 HS - 12 Mb/s",
+    "usb2": "USB 2.0 - 480 Mb/s",
+    "usb30": "USB 3.0 - 5 Gb/s",
+    "usb31": "USB 3.1 - 10 Gb/s",
+    "usb32": "USB 3.2x2 - 10 Gb/s",
+    "usb4": "USB 4.0 - 40 Gb/s",
+    "usb?": "Unknown USB",
+    "tb1": "Thunderbolt 1 - 10 Gb/s",
+    "tb2": "Thunderbolt 2 - 20 Gb/s",
+    "tb3": "Thunderbolt 3 - 40 Gb/s",
+    "tb4": "Thunderbolt 4 - 40 Gb/s",
+    "tb5": "Thunderbolt 5 - 120 Gb/s",
+    "tb?": "Unknown Thunderbolt"
 }
 
-ROOT_HUB_OVERRIDE = {
-    # _name output               MFR           Speed         Fancy Name                 VID     PID
-    "Generic":                   ["Generic",    "Unknown",   "Unknown Bus",             "05ac", "0000"],
-    "USBBus":                    ["Apple Inc.", "12 Mb/s",   "USB 1.1 Bus",             "05ac", "0000"],
-    "USB20Bus":                  ["Apple Inc.", "480 Mb/s",  "USB 2.0 Bus",             "05ac", "0000"],
-    "USB30Bus":                  ["Apple Inc.", "5 Gb/s",    "USB 3.0 Bus",             "05ac", "0000"],
-    "USB 3.1 Bus":               ["Apple Inc.", "10 Gb/s",   "USB 3.1 Bus",             "05ac", "0000"],
-    "thunderbolt_bus":           ["Apple Inc.", "?? Gb/s",   "Thunderbolt 1 / 2 Bus",   "0001", "0000"],
-    "thunderboltusb4_bus_":      ["Apple Inc.", "40 Gb/s",   "Thunderbolt / USB 4 Bus", "0001", "0000"],
-    "OHCI Root Hub Simulation":  ["Apple Inc.", "12 Mb/s",   "Virtual USB 1.1 Bus",     "05ac", "8005"],
-    "UHCI Root Hub Simulation":  ["Apple Inc.", "12 Mb/s",   "Virtual USB 1.1 Bus",     "05ac", "0000"],
-    "EHCI Root Hub Simulation":  ["Apple Inc.", "480 Mb/s",  "Virtual USB 2.0 Bus",     "05ac", "8006"],
-    "XHCI Root Hub Simulation":  ["Apple Inc.", "5 Gb/s",    "Virtual USB 3.0 Bus",     "05ac", "8007"]
+SPEED_INDEX = {
+    "1.5 Mb/s":          SPEED_NAME["usb1_ls"],
+    "full_speed":        SPEED_NAME["usb1_fs"],
+    "12 Mb/s":           SPEED_NAME["usb1_fs"],
+    "high_speed":        SPEED_NAME["usb2"],
+    "480 Mb/s":          SPEED_NAME["usb2"],
+    "super_speed":       SPEED_NAME["usb30"],
+    "5 Gb/s":            SPEED_NAME["usb30"],
+    "10 Gb/s":           SPEED_NAME["usb31"],
+    "usb_four":          SPEED_NAME["usb4"],
+    "thunderbolt_one":   SPEED_NAME["tb1"],
+    "thunderbolt_two":   SPEED_NAME["tb2"],
+    "thunderbolt_three": SPEED_NAME["tb3"],
+    "thunderbolt_four":  SPEED_NAME["tb4"],
+    "thunderbolt_five":  SPEED_NAME["tb5"]
+}
+
+# Apple is stupid and wont just directly give us info on certain devices like root hubs and bluetooth controllers
+DEVICE_OVERRIDE = {
+    # _name output                    MFR                Speed                     Fancy Name                  VID     PID
+    "Generic":                        ["Generic",        SPEED_NAME["usb?"],     "Unknown Bus",              "05ac", "0000"],
+    "USBBus":                         ["Apple Inc.",     SPEED_NAME["usb1_fs"],  "USB 1.1 Bus",              "05ac", "0000"],
+    "USB20Bus":                       ["Apple Inc.",     SPEED_NAME["usb2"],     "USB 2.0 Bus",              "05ac", "0000"],
+    "USB30Bus":                       ["Apple Inc.",     SPEED_NAME["usb30"],    "USB 3.0 Bus",              "05ac", "0000"],
+    "USB 3.1 Bus":                    ["Apple Inc.",     SPEED_NAME["usb31"],    "USB 3.1 Bus",              "05ac", "0000"],
+    "thunderbolt_bus":                ["Apple Inc.",     SPEED_NAME["tb?"],      "Thunderbolt 1 / 2 Bus",    "0001", "0000"],
+    "thunderboltusb4_bus_":           ["Apple Inc.",     SPEED_NAME["tb4"],      "Thunderbolt / USB 4 Bus",  "0001", "0000"],
+    "OHCI Root Hub Simulation":       ["Apple Inc.",     SPEED_NAME["usb1_fs"],  "Virtual USB 1.1 Bus",      "05ac", "8005"],
+    "UHCI Root Hub Simulation":       ["Apple Inc.",     SPEED_NAME["usb1_fs"],  "Virtual USB 1.1 Bus",      "05ac", "0000"],
+    "EHCI Root Hub Simulation":       ["Apple Inc.",     SPEED_NAME["usb2"],     "Virtual USB 2.0 Bus",      "05ac", "8006"],
+    "XHCI Root Hub Simulation":       ["Apple Inc.",     SPEED_NAME["usb30"],    "Virtual USB 3.0 Bus",      "05ac", "8007"],
+    "Bluetooth USB Host Controller":  ["Broadcom Corp.", SPEED_NAME["usb1_fs"],  "Bluetooth USB Controller", "05ac", "8290"] # MacbookPro12,1 + Others
 }
 
 def clean_macos_version(raw):
@@ -171,11 +190,11 @@ def get_root_hubs(dev, DATA_PROPERTIES, VERSION):
 
     try:
         if "thunderboltusb4_bus_" in base_name:
-            mfr, speed, name, vid, pid = ROOT_HUB_OVERRIDE["thunderboltusb4_bus_"]
+            mfr, speed, name, vid, pid = DEVICE_OVERRIDE["thunderboltusb4_bus_"]
         else:
-            mfr, speed, name, vid, pid = ROOT_HUB_OVERRIDE[base_name]
+            mfr, speed, name, vid, pid = DEVICE_OVERRIDE[base_name]
     except:
-        mfr, speed, name, vid, pid = ROOT_HUB_OVERRIDE["Generic"]
+        mfr, speed, name, vid, pid = DEVICE_OVERRIDE["Generic"]
         pass
 
     return name, l_id, mfr, vid, pid, speed
@@ -221,8 +240,10 @@ def extract_features(dev, DATA_PROPERTIES, VERSION):
     
     # Broadcomm Bluetooth Controller workaround (MacbookPro12,1 + Others)
     # Apple wont give us the USB speeed for it so we need to hard code it
-    if speed == None and vid == "05ac" and pid == "8290":
-        speed = SPEED_INDEX["12 Mb/s"]
+    try:
+        speed = DEVICE_OVERRIDE[name][1]
+    except:
+        pass
 
     # Collapse whitespace in name/manufacturer so it's clean on one line
     mfr = " ".join(str(mfr).split())
