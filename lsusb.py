@@ -186,13 +186,23 @@ def extract_features(dev, DATA_PROPERTIES, VERSION, RH):
         LID_TYPE = "RLID"
     
     if DATA_PROPERTIES[LID_TYPE][VERSION - 1] != None:
-        l_id = clean_hex(dev.get(DATA_PROPERTIES[LID_TYPE][VERSION - 1])) or "-"
-        if VERSION != 4:
-            if VERSION == 1 and RH == True:
-                l_id = l_id + "0000"
-            l_id = l_id.split(" / ")[0]
         if RH == True and (VERSION == 2 or VERSION == 3):
-            l_id = "00000000" # it doesnt look like apple even gives us the location ID for root hubs on Yosemite - Sequoia
+            rh_bus = dev.get("_items", [])
+            if len(rh_bus) > 0:
+                for rh_dev in rh_bus or []:
+                    l_id = clean_hex(rh_dev.get(DATA_PROPERTIES["LID"][VERSION - 1])) or "-"
+                    if l_id != "-":
+                        l_id = l_id.split(" / ")[0]
+                        l_id = l_id[:-6] + "000000"
+                        break
+            else:
+                l_id = "00000000"
+        else:
+            l_id = clean_hex(dev.get(DATA_PROPERTIES[LID_TYPE][VERSION - 1])) or "-"
+            if VERSION != 4:
+                if VERSION == 1 and RH == True:
+                    l_id = l_id + "0000"
+                l_id = l_id.split(" / ")[0]
     else:
         l_id = None
     
