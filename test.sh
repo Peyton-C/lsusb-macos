@@ -1,7 +1,7 @@
 #!/bin/bash
 # Automatically try every supported combination
 
-EXTRA_ARGS=""
+EXTRA_ARGS="-e"
 
 # Tahoe and Newer
 printf "Tahoe\n"

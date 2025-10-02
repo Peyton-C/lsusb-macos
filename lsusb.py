@@ -4,38 +4,43 @@ import json, plistlib, platform, os, sys, subprocess, argparse
 from pathlib import Path
 
 VERBOSE = False
-SHOW_SPEED = False
+EXTRA_INFO = False
 DEBUG_TYPE = [False, False]
 DEBUG_FILE = ["", ""]
+INDENT = "     "
 filt_vid = None
 filt_pid = None
 
 USB_DATA_PROPERTIES = {
-             # 10.7 - 10.9      10.10 - 10.14     10.15 - 15.X.    26.0+
-    "ARG1":  ["SPUSBDataType",   "SPUSBDataType", "SPUSBDataType", "SPUSBHostDataType"],
-    "ARG2":  ["-xml",            "-xml",          "-json",         "-json"],
-    "LID":   ["g_location_id",   "location_id",   "location_id",   "USBKeyLocationID"],
-    "RLID":  ["usb_bus_number",  "location_id",   "location_id",   "USBKeyLocationID"],
-    "VID":   ["b_vendor_id",     "vendor_id",     "vendor_id",     "USBDeviceKeyVendorID"],
-    "PID":   ["a_product_id",    "product_id",    "product_id",    "USBDeviceKeyProductID"],
-    "MFR":   ["f_manufacturer",  "manufacturer",  "manufacturer",  "USBDeviceKeyVendorName"],
-    "SPEED": ["e_device_speed",  "device_speed",  "device_speed",  "USBDeviceKeyLinkSpeed"],
-    "NAME":  ["_name",           "_name",         "_name",         "_name"],
-    "HEAD":  ["_items",          "_items",        "SPUSBDataType", "SPUSBHostDataType"]
+                  # 10.7 - 10.9      10.10 - 10.14     10.15 - 15.X.    26.0+
+    "ARG1":       ["SPUSBDataType",   "SPUSBDataType", "SPUSBDataType", "SPUSBHostDataType"],
+    "ARG2":       ["-xml",            "-xml",          "-json",         "-json"],
+    "LID":        ["g_location_id",   "location_id",   "location_id",   "USBKeyLocationID"],
+    "RLID":       ["usb_bus_number",  "location_id",   "location_id",   "USBKeyLocationID"],
+    "VID":        ["b_vendor_id",     "vendor_id",     "vendor_id",     "USBDeviceKeyVendorID"],
+    "PID":        ["a_product_id",    "product_id",    "product_id",    "USBDeviceKeyProductID"],
+    "MFR":        ["f_manufacturer",  "manufacturer",  "manufacturer",  "USBDeviceKeyVendorName"],
+    "SPEED":      ["e_device_speed",  "device_speed",  "device_speed",  "USBDeviceKeyLinkSpeed"],
+    "NAME":       ["_name",           "_name",         "_name",         "_name"],
+    "HEAD":       ["_items",          "_items",        "SPUSBDataType", "SPUSBHostDataType"],
+    "SERIAL":     ["d_serial_num",    "serial_num",    "serial_num",    "USBDeviceKeySerialNumber"],
+    "APPL_SERIAL":[None,              None,            None,            None]
 }
 
 TB_DATA_PROPERTIES = {
-             # Unsupported.  10.15 - 15.X             26.0+
-    "ARG1":  [None, None,    "SPThunderboltDataType", "SPThunderboltDataType"],
-    "ARG2":  [None, None,    "-json",                 "-json"],
-    "LID":   [None, None,    None,                    None], # This is kinda still a janky workaround becasue i want to share as much as i can between USB and TB as i can but i dont wanna make it overly complex either
-    "RLID":  [None, None,    None,                    None],
-    "VID":   [None, None,    "vendor_id_key",         "vendor_id_key"],
-    "PID":   [None, None,    "device_id_key",         "device_id_key"],
-    "MFR":   [None, None,    "vendor_name_key",       "vendor_name_key"],
-    "SPEED": [None, None,    "mode_key",              "mode_key"],
-    "NAME":  [None, None,    "_name",                 "_name"],
-    "HEAD":  [None, None,    "SPThunderboltDataType", "SPThunderboltDataType"]
+                  # Unsupported.  10.15 - 15.X              26.0+
+    "ARG1":       [None, None,    "SPThunderboltDataType",  "SPThunderboltDataType"],
+    "ARG2":       [None, None,    "-json",                  "-json"],
+    "LID":        [None, None,    None,                     None], # This is kinda still a janky workaround becasue i want to share as much as i can between USB and TB as i can but i dont wanna make it overly complex either
+    "RLID":       [None, None,    None,                     None],
+    "VID":        [None, None,    "vendor_id_key",          "vendor_id_key"],
+    "PID":        [None, None,    "device_id_key",          "device_id_key"],
+    "MFR":        [None, None,    "vendor_name_key",        "vendor_name_key"],
+    "SPEED":      [None, None,    "mode_key",               "mode_key"],
+    "NAME":       [None, None,    "_name",                  "_name"],
+    "HEAD":       [None, None,    "SPThunderboltDataType",  "SPThunderboltDataType"],
+    "SERIAL":     [None, None,    None,                     None],
+    "APPL_SERIAL":[None, None,    "aapl_serial_number_key", None]
 }
 
 SPEED_NAME = {
@@ -112,7 +117,7 @@ def clean_macos_version(raw):
     return VERSION, ver
 
 def arguments():
-    global DEBUG_FILE, DEBUG_TYPE, VERSION, filt_pid, filt_vid, VERBOSE, macos_version, SHOW_SPEED
+    global DEBUG_FILE, DEBUG_TYPE, VERSION, filt_pid, filt_vid, VERBOSE, macos_version, EXTRA_INFO
     parser = argparse.ArgumentParser(
         prog="lsusb-macos",
         description="Display connected USB and Thunderbolt Devices on macOS / Mac OS X"
@@ -120,7 +125,7 @@ def arguments():
 
     parser.add_argument("-v", "--verbose", help="Output the raw information from system_profiler", action='store_true')
     parser.add_argument("-d", nargs=1, metavar=("Vendor:Product"), help="Show only devices with the specified vendor and product ID numbers (in Hexadecimal) ")
-    parser.add_argument("-s", "--speed", help="Include the device speed in the output", action='store_true')
+    parser.add_argument("-e", "--extra", help="Include extra information about the device, including Speed and serial", action='store_true')
     parser.add_argument("-D", "--debug", nargs=2, metavar=("Type", "File"), action="append", help="Simulate Connected Devices, Type (USB|TB) and File (JSON or XML)")
     parser.add_argument("-os", "--osver", help="Debug OS Version (ie 10.7, 10.13, 15.5, 26.1, etc)")
 
@@ -139,10 +144,10 @@ def arguments():
         VERSION, macos_version = clean_macos_version(args.osver)
 
     if args.d:
-        filt_vid, filt_pid = args.d.split(":")
+        filt_vid, filt_pid = args.d[0].split(":")
     
     VERBOSE = args.verbose
-    SHOW_SPEED = args.speed
+    EXTRA_INFO = args.extra
 
 def clean_hex(h):
     if h in (None, "-"):
@@ -196,8 +201,13 @@ def get_root_hubs(dev, DATA_PROPERTIES, VERSION):
     except:
         mfr, speed, name, vid, pid = DEVICE_OVERRIDE["Generic"]
         pass
+    
+    # Name, LID, VID, PID, MFR, 
+    info = [name, l_id, vid, pid, mfr]
+    # Speed, Serial
+    ext_info = [speed, None]
 
-    return name, l_id, mfr, vid, pid, speed
+    return info, ext_info
 
 def extract_features(dev, DATA_PROPERTIES, VERSION):
     # The only parts that are 100% consistent among versions
@@ -245,20 +255,26 @@ def extract_features(dev, DATA_PROPERTIES, VERSION):
     except:
         pass
 
+    if DATA_PROPERTIES["SERIAL"][VERSION - 1] != None:
+        serial = dev.get(DATA_PROPERTIES["SERIAL"][VERSION - 1])
+        if serial == "Not Provided":
+            serial = None
+    # Apple seems to be the only one that can do serial numbers with Thunderbolt
+    elif DATA_PROPERTIES["APPL_SERIAL"][VERSION - 1] != None:
+        serial = dev.get(DATA_PROPERTIES["APPL_SERIAL"][VERSION - 1])
+    else:
+        serial = None
+
     # Collapse whitespace in name/manufacturer so it's clean on one line
     mfr = " ".join(str(mfr).split())
     name = " ".join(str(name).split())
-    
-    return l_id, vid, pid, mfr, name, speed
 
-def filter_vid_pid(filt_vid, vid, filt_pid, pid):
-    if filt_vid == None and filt_pid == None:
-        return True
-    else:
-        if vid == filt_vid and pid == filt_pid:
-            return True
-        else:
-            return False
+    # Name, LID, VID, PID, MFR, 
+    info = [name, l_id, vid, pid, mfr]
+    # Speed, Serial
+    ext_info = [speed, serial]
+    
+    return info, ext_info
 
 def get_json(VERSION, TYPE):
     if TYPE == "USB":
@@ -303,17 +319,35 @@ def SPDataType(VERSION, TYPE):
         DATA_PROPERTIES = TB_DATA_PROPERTIES
     lines = []
 
+    def filter_vid_pid(filt_vid, vid, filt_pid, pid):
+        if filt_vid == None and filt_pid == None:
+            return True
+        else:
+            if vid == filt_vid and pid == filt_pid:
+                return True
+            else:
+                return False
+
+    def output(device, ext):
+        lines = []
+        if filter_vid_pid(filt_vid, device[2], filt_pid, device[3]) == True:
+            if device[1] != None:
+                lines.append(f"Location: {device[1]}: ID {device[2]}:{device[3]} {device[4]} {device[0]}")
+            else:
+                lines.append(f"ID {device[1]}:{device[2]} {device[3]} {device[0]}")
+            
+            if EXTRA_INFO == True:
+                if ext[0] != None:
+                    lines.append(f"{INDENT}Speed: {ext[0]}")
+                if ext[1] != None:
+                    lines.append(f"{INDENT}Serial: {ext[1]}")
+        return lines
+        
     def process_devices(items, depth=0):
         for dev in items or []:
-            l_id, vid, pid, mfr, name, speed = extract_features(dev, DATA_PROPERTIES, VERSION)
-            if filter_vid_pid(filt_vid, vid, filt_pid, pid) == True:
-                if l_id != None:
-                    lines.append(f"Location: {l_id}: ID {vid}:{pid} {mfr} {name}")
-                else:
-                    lines.append(f"ID {vid}:{pid} {mfr} {name}")
-                
-                if speed != None and SHOW_SPEED == True:
-                    lines.append(f"     Speed: {speed}")
+            device, ext = extract_features(dev, DATA_PROPERTIES, VERSION)
+            for line in output(device, ext):
+                lines.append(line)
             
             child_items = dev.get("_items")
             if isinstance(child_items, list) and child_items:
@@ -325,14 +359,9 @@ def SPDataType(VERSION, TYPE):
         dev = data[0]
     
     for top in dev.get(DATA_PROPERTIES["HEAD"][VERSION - 1], []):
-        name, l_id, mfr, vid, pid, speed = get_root_hubs(top, DATA_PROPERTIES, VERSION)
-        if l_id != None:
-            lines.append(f"Location: {l_id}: ID {vid}:{pid} {mfr} {name}")
-        else:
-            lines.append(f"ID {vid}:{pid} {mfr} {name}")
-        
-        if speed != None and SHOW_SPEED == True:
-            lines.append(f"     Speed: {speed}")
+        device, ext = get_root_hubs(top, DATA_PROPERTIES, VERSION)
+        for line in output(device, ext):
+            lines.append(line)
         
         process_devices(top.get("_items", []), depth=0)
     

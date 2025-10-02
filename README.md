@@ -32,31 +32,34 @@ ID 2b89:0708 Ugreen Group Limited Thunderbolt 4 Docking Station (8-in-1)
 ```
 
 ## Copatability
-| macOS Version | Python Version | USB | USB Root Hubs  | TB | Format            |
-| :-----------: | :------------: | :-: | :------------: | -- | ----------------- |
-| 10.6          | 3.7            |  ?  |  ?             | X  | 1 - Legacy        |
-| 10.7          | 3.7            |  Y  |  Y             | X  | 1 - Legacy        |
-| 10.8          | 3.7            |  Y  |  Y             | X  | 1 - Legacy        |
-| 10.9          | 3.11           |  ?  |  ?             | X  | 1 - Legacy        |
-| 10.10         | 3.11           |  Y  |  ~             | X  | 2 - Modern - XML  |
-| 10.11         | 3.11           |  Y  |  ~             | X  | 2 - Modern - XML  |
-| 10.12         | 3.11           |  Y  |  ~             | X  | 2 - Modern - XML  |
-| 10.13         | 3.13           |  Y  |  ~             | X  | 2 - Modern - XML  |
-| 10.14         | 3.13           |  Y  |  ~             | X  | 2 - Modern - XML  |
-| 10.15         | 3.13           |  Y  |  ~             | Y  | 3 - Modern - JSON |
-| 11            | 3.13           |  Y  |  ~             | Y  | 3 - Modern - JSON |
-| 12            | 3.13           |  Y  |  ~             | Y  | 3 - Modern - JSON |
-| 13            | 3.13           |  Y  |  ~             | Y  | 3 - Modern - JSON |
-| 14            | 3.13           |  Y  |  ~             | Y  | 3 - Modern - JSON |
-| 15            | 3.13           |  Y  |  ~             | Y  | 3 - Modern - JSON |
-| 26            | 3.13           |  Y  |  Y             | Y  | 4 - Host - JSON   |
+| macOS Version | Python Version | USB | USB Root Hubs  | TB  | Format            |
+| :-----------: | :------------: | :-: | :------------: | :-: | ----------------- |
+| 10.6          | 3.7            |  ?  |  ?             | X   | ? - Unknown       |
+| 10.7          | 3.7            |  Y  |  Y             | X   | 1 - Legacy        |
+| 10.8          | 3.7            |  Y  |  Y             | X   | 1 - Legacy        |
+| 10.9          | 3.11           |  ?  |  ?             | X   | ? - Unknown       |
+| 10.10         | 3.11           |  Y  |  ~             | X   | 2 - Modern - XML  |
+| 10.11         | 3.11           |  Y  |  ~             | X   | 2 - Modern - XML  |
+| 10.12         | 3.11           |  Y  |  ~             | X   | 2 - Modern - XML  |
+| 10.13         | 3.13           |  Y  |  ~             | X   | 2 - Modern - XML  |
+| 10.14         | 3.13           |  Y  |  ~             | X   | 2 - Modern - XML  |
+| 10.15         | 3.13           |  Y  |  ~             | Y   | 3 - Modern - JSON |
+| 11            | 3.13           |  Y  |  ~             | Y   | 3 - Modern - JSON |
+| 12            | 3.13           |  Y  |  ~             | Y   | 3 - Modern - JSON |
+| 13            | 3.13           |  Y  |  ~             | Y   | 3 - Modern - JSON |
+| 14            | 3.13           |  Y  |  ~             | Y   | 3 - Modern - JSON |
+| 15            | 3.13           |  Y  |  ~             | Y   | 3 - Modern - JSON |
+| 26            | 3.13           |  Y  |  Y             | Y   | 4 - Host - JSON   |
 
-### Copatability Notes
-- Thunderbolt support is disabled for 10.14 and lower because I don't have a way to properly test Format 1 and Format 2 TB, although Format 2 TB should work with minor modications.
-- Root hubs lack the location ID on 10.10-15.X because apple doesnt give you any form of location ID outside of a device itself.
-- 10.6 should work without any modifacations.
-- Root hub names are hardcoded because system_profiler won't give us much info about them.
-- Broadcomm Bluetooth controllers found on older intel macs wont 
+### Quirks and other notes
+- Shared
+    - Apple (especially in V2 and V3) doesn't give us information about vertain devices such as root hubs/buses and bluetooth controllers so we need to manually hardcode the values we dont get.
+    - 10.6 should work without any modications, but I haven't been able to get it to run in a VM.
+    - 10.9 might already work, I haven't been able to get a VM with it running so im not entirely sure if its using V1 or V2.
+- USB
+    - USB Root hubs lack the location ID in 10.10-15.X because Apple doesn't give us a location ID and don't want to deal with extracting it from the downstream device.
+- Thunderbolt
+    - Thunderbolt support is disabled for 10.14 and lower because I don't have a way to properly test Format 1 and Format 2 TB, although Format 2 TB should work with minor modications.
 
 ## Credit
 Thank you to the following people for their contributions:
