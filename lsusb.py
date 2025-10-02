@@ -62,6 +62,7 @@ ROOT_HUB_OVERRIDE = {
     "thunderbolt_bus":           ["Apple Inc.", "?? Gb/s",   "Thunderbolt 1 / 2 Bus",   "0001", "0000"],
     "thunderboltusb4_bus_":      ["Apple Inc.", "40 Gb/s",   "Thunderbolt / USB 4 Bus", "0001", "0000"],
     "OHCI Root Hub Simulation":  ["Apple Inc.", "12 Mb/s",   "Virtual USB 1.1 Bus",     "05ac", "8005"],
+    "UHCI Root Hub Simulation":  ["Apple Inc.", "12 Mb/s",   "Virtual USB 1.1 Bus",     "05ac", "0000"],
     "EHCI Root Hub Simulation":  ["Apple Inc.", "480 Mb/s",  "Virtual USB 2.0 Bus",     "05ac", "8006"],
     "XHCI Root Hub Simulation":  ["Apple Inc.", "5 Gb/s",    "Virtual USB 3.0 Bus",     "05ac", "8007"]
 }
@@ -129,7 +130,7 @@ def clean_hex(h):
         s = s[2:]
     return s.zfill(4)
 
-def plist_to_json(path) -> None:
+def plist_to_json(path):
     plist_file = Path(path)
     with plist_file.open("rb") as f:
         data = plistlib.load(f)  # handles XML and binary plists
@@ -194,15 +195,14 @@ def extract_features(dev, location_id, VID, PID, MFR, NAME, SPEED, VERSION):
     except:
         speed = None
         pass
-
-    if VERSION != 3 or VERSION == 3 and l_id == None:
-        mfr = dev.get(MFR[VERSION - 1]) or "-"
-        vid = clean_hex(dev.get(VID[VERSION - 1]) or "-")
-    elif VERSION == 3 and l_id != None:
+    
+    # it seems like in V2 apple sometimes includes the manufacturer in the VID but not always so the previous patch for V3 wont work
+    # V2 and V3 are so messy compared to V1 and V4, it is actually insane how many patches i have to make for each of them
+    if len(dev.get(VID[VERSION - 1])) > 6 or (VERSION == 3 and l_id != None):
         # VID includes both the manufacturer and the VID for some reason
         vid = dev.get(VID[VERSION - 1]) or "-"
 
-        # Apple is actually fucking insane, instead of you know, putting down their actual USB VID they just supply "apple_vendor_id"
+        # V3: Apple is actually fucking insane, instead of you know, putting down their actual USB VID they just supply "apple_vendor_id"
         if vid != "apple_vendor_id":
             vid, mfr = vid.split("  ") # "vendor_id" : "0x154b  (PNY Technologies Inc.)"
             vid = clean_hex(vid)
@@ -211,6 +211,10 @@ def extract_features(dev, location_id, VID, PID, MFR, NAME, SPEED, VERSION):
             vid = "05ac" # Pretty sure this is apple's VID
             # Apple doesnt add on the company name to the VID so we get it from the feild thats usally less detailed, execpt for themselves
             mfr = dev.get(MFR[VERSION - 1]) or "-"
+    elif VERSION != 3 or (VERSION == 3 and l_id == None):
+        mfr = dev.get(MFR[VERSION - 1]) or "-"
+        vid = clean_hex(dev.get(VID[VERSION - 1]) or "-")
+        
     
     # Broadcomm Bluetooth Controller workaround (MacbookPro12,1 + Others)
     # Apple wont give us the USB speeed for it so we need to hard code it

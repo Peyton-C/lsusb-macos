@@ -54,9 +54,11 @@ ID 2b89:0708 Ugreen Group Limited Thunderbolt 4 Docking Station (8-in-1)
 ### Copatability Notes
 - Thunderbolt support is disabled for 10.14 and lower because I don't have a way to properly test Format 1 and Format 2 TB, although Format 2 TB should work with minor modications.
 - Root hubs lack the location ID on 10.10-15.X because apple doesnt give you any form of location ID outside of a device itself.
-- 10.6 should work without any modifacations
+- 10.6 should work without any modifacations.
+- Root hub names are hardcoded because system_profiler won't give us much info about them.
+- Broadcomm Bluetooth controllers found on older intel macs wont 
 
 ## Credit
 Thank you to the following people for their contributions:
-- [@kirb]("https://github.com/kirb") - [macOS Tahoe Thunderbolt 3 Output](./json_examples/tahoe_tb_kirb.json)
-- [@jlhonora]("https://github.com/jlhonora") - [Information about older macOS system_profiler outputs ]("https://github.com/jlhonora/lsusb")
+- [@kirb](https://github.com/kirb) - [macOS Tahoe Thunderbolt 3 Output](./json_examples/tahoe_tb_kirb.json)
+- [@jlhonora](https://github.com/jlhonora) - [Information about older macOS system_profiler outputs ](https://github.com/jlhonora/lsusb)
