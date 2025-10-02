@@ -5,7 +5,7 @@ EXTRA_ARGS=""
 
 # Tahoe and Newer
 printf "Tahoe\n"
-python3 ./lsusb.py -D USB ./tests/Version4/4tahoe_usb_full.json -D TB ./tests/Version4/tahoe_tb.json -os 26.1 $EXTRA_ARGS
+python3 ./lsusb.py -D USB ./tests/Version4/tahoe_usb_full.json -D TB ./tests/Version4/tahoe_tb.json -os 26.1 $EXTRA_ARGS
 
 # Sequoia - Catalina
 printf "\n\nSequoia\n"

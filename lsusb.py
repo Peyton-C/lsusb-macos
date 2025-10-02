@@ -149,16 +149,16 @@ def plist_to_json(path):
     with open("/tmp/lsusb.json", "w", encoding="utf-8") as out:
         json.dump(data, out, ensure_ascii=False, indent=2, sort_keys=True, default=default)
 
-def get_root_hubs(source, DATA_PROPERTIES, VERSION):
+def get_root_hubs(dev, DATA_PROPERTIES, VERSION):
     # macOS gives us basically nothing about root hubs so we kinda just get what we can and hardcode everything else LMAO
-    base_name = source.get(DATA_PROPERTIES["NAME"][VERSION - 1], [])
+    base_name = dev.get(DATA_PROPERTIES["NAME"][VERSION - 1], [])
     if DATA_PROPERTIES["RLID"][VERSION - 1] != None:
         if VERSION == 4:
-            l_id = clean_hex(source.get(DATA_PROPERTIES["RLID"][VERSION - 1])) or "-"
+            l_id = clean_hex(dev.get(DATA_PROPERTIES["RLID"][VERSION - 1])) or "-"
             if VERSION != 4:
                 l_id = l_id.split(" / ")[0]
         elif VERSION == 1:
-            l_id = clean_hex(source.get(DATA_PROPERTIES["RLID"][VERSION - 1])) or "-"
+            l_id = clean_hex(dev.get(DATA_PROPERTIES["RLID"][VERSION - 1])) or "-"
             l_id = l_id.split(" / ")[0]
             l_id = l_id + "0000"
         else:
@@ -296,11 +296,11 @@ def SPDataType(VERSION, TYPE):
                 process_devices(child_items, depth + 1)
     
     if VERSION > 2:
-        source = data
+        dev = data
     else:
-        source = data[0]
+        dev = data[0]
     
-    for top in source.get(DATA_PROPERTIES["HEAD"][VERSION - 1], []):
+    for top in dev.get(DATA_PROPERTIES["HEAD"][VERSION - 1], []):
         name, l_id, mfr, vid, pid, speed = get_root_hubs(top, DATA_PROPERTIES, VERSION)
         if l_id != None:
             lines.append(f"Location: {l_id}: ID {vid}:{pid} {mfr} {name}")
