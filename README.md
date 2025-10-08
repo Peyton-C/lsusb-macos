@@ -58,8 +58,10 @@ ID 2b89:0708 Ugreen Group Limited Thunderbolt 4 Docking Station (8-in-1)
     - 10.9 might already work, I haven't been able to get a VM with it running so im not entirely sure if its using V1 or V2.
 - USB
     - on macOS 10.10-15.X root hubs without any downstream devices won't have a real location ID.
-- Thunderbolt
+    - At some point after 10.13 (excluding Tahoe and newer) apple stopped giving info about root hubs without any downstream devices, I would assume the change happened with V3 but I haven't done enough testing to confirm that.
+- Thunderbolt / USB 4
     - Thunderbolt support is disabled for 10.14 and lower because I don't have a way to properly test Format 1 and Format 2 TB, although Format 2 TB should work with minor modications.
+    - the bus speed for Thunderbolt / USB 4 is determined by the speed its activly running at, so if your device is slower than your bus it will misreport the speed.
 
 ## Credit
 Thank you to the following people for their contributions:

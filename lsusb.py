@@ -114,6 +114,12 @@ def clean_macos_version(raw):
     else:
         VERSION = 1
     
+    # 10.6 and 10.9 are untested
+    if (ver >= 100900 and ver <= 100999) or (ver >= 100600 and ver <= 100699):
+        print("Your version is untested, please make an issue on Github with info \n" \
+        "about if it worked along with the output of the following command: \n" \
+        "system_profiler SPUSBDataType -xml \n")
+    
     return VERSION, ver
 
 def arguments():
